@@ -27,11 +27,11 @@ analyzeLoop state (Comment str)                 = state
 copyFromMathOp condVal (offset, value)          = Copy offset 0 value 0
 
 optimizeLoop loop@(Loop children)               = if hasNonBasicOps || totalShift /= 0 || condVal /= (-1)
-    then [loop]
+    then [Loop children']
     else comments ++ optimizedChildren ++ [(Set 0 0)]
     where
-        comments                                = filter isComment children
         children'                               = optimizeLoops children
+        comments                                = filter isComment children
         hasNonBasicOps                          = not $ all isBasicOp children'
         (totalShift, condVal, mathOps)          = foldl analyzeLoop (0, 0, S.empty) children
         optimizedChildren                       = map (copyFromMathOp condVal) $ toList mathOps

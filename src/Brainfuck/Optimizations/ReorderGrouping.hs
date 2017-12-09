@@ -5,20 +5,13 @@ import Data.Maybe
 
 import Brainfuck
 
-data Blocker = All | Specific Int | None
-
-getBlocker stmt             = case stmt of
-    Shift _                 -> All --Shifts shoud've been removed by InlineShift
-    Loop _                  -> All
-    Input off               -> Specific off
-    Output off              -> Specific off
-    Copy _ off _ _          -> Specific off
-    _                       -> None
-
-isBlocker off stmt          = case getBlocker stmt of
-    All                     -> True
-    Specific x              -> off == x
-    None                    -> False
+isBlocker off1 stmt          = case stmt of
+    Shift _                 -> True --Shifts shoud've been removed by InlineShift
+    Loop _                  -> True
+    Input off2              -> off1 == off2
+    Output off2             -> off1 == off2
+    Copy _ off2 _ _         -> off1 == off2
+    _                       -> False
 
 assignsTo needle stmt       = case stmt of
     Math off _              -> off == needle
@@ -38,10 +31,13 @@ groupOps stmt1 stmt2        = case stmt2 of
 
 reorderAndGroup' ops []     = ops
 reorderAndGroup' ops (curr:rest)
+    | isLoop curr           = reorderAndGroup' (optimizedLoop : ops) rest
     | isNothing offset      = reorderAndGroup' (curr : ops) rest
     | null prev             = reorderAndGroup' (grouped : ops) rest
     | otherwise             = reorderAndGroup' ops rest
     where
+        Loop children       = curr
+        optimizedLoop       = Loop $ reorderAndGroup children
         offset              = case curr of
             Math off _      -> Just off
             Set off _       -> Just off
