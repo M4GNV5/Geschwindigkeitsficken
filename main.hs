@@ -10,16 +10,32 @@ data Statement
     | Copy Int Int Int      -- p[arg0] = *p * arg1 / arg2
     | Shift Int             -- p += arg
     | Loop [Statement]      -- while(*p) { arg }
-    deriving(Show, Eq)
+    deriving(Eq)
 
 isLoop (Loop _) = True
 isLoop _        = False
+
+instance Show Statement where
+    show (Math x)
+        | x < 0         = "*p -= " ++ (show (-x))
+        | otherwise     = "*p += " ++ (show x)
+    show (Shift x)      = "p += " ++ (show x)
+    show (Set x)        = "*p = " ++ (show x)
+    show (Copy x y z)   = "p[" ++ (show x) ++ "] = *p" ++ mulStr ++ divStr
+        where
+            mulStr      = if y == 1
+                then ""
+                else " * " ++ (show y)
+            divStr      = if z == 1
+                then ""
+                else " / " ++ (show z)
+    show (Loop s)       = "while(*p) { " ++ (concat $ map show s) ++ " }"
 
 
 
 parseStatements str     = fst $ parseStatements' str
 
-parseStatements' []      = ([], [])
+parseStatements' []     = ([], [])
 parseStatements' (x:xs)
     | x == ']'          = ([], xs)
     | x == '['          = ((Loop rest) : rest', xs'')
@@ -88,4 +104,4 @@ main = do
     let code        = parseStatements input
         optimized   = foldl (flip ($)) code optimizations
 
-    putStrLn $ show optimized
+    putStrLn $ intercalate "\n" $ map show optimized
