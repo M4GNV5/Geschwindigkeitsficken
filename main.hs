@@ -10,6 +10,8 @@ data Statement
     | Copy Int Int Int      -- p[arg0] = *p * arg1 / arg2
     | Shift Int             -- p += arg
     | Loop [Statement]      -- while(*p) { arg }
+    | Input                 -- *p = getchar()
+    | Output                -- putchar(*p)
     deriving(Eq)
 
 isLoop (Loop _) = True
@@ -29,7 +31,9 @@ instance Show Statement where
             divStr      = if z == 1
                 then ""
                 else " / " ++ (show z)
-    show (Loop s)       = "while(*p) { " ++ (concat $ map show s) ++ " }"
+    show (Loop s)       = "while(*p) { " ++ (intercalate "; " $ map show s) ++ " }"
+    show Input          = "*p = getchar()"
+    show Output         = "putchar(*p)"
 
 
 
@@ -46,6 +50,8 @@ parseStatements' (x:xs)
             '-'         -> Math (-1)
             '>'         -> Shift 1
             '<'         -> Shift (-1)
+            ','         -> Input
+            '.'         -> Output
         (rest, xs')     = parseStatements' xs
         (rest', xs'')   = parseStatements' xs'
 
@@ -58,6 +64,11 @@ groupStatement rest curr                   = curr : rest
 groupStatements statements                 = reverse $ foldl groupStatement [] statements
 
 
+
+isBasicOp (Loop _)  = False
+isBasicOp Input     = False
+isBasicOp Output    = False
+isBasicOp _         = True
 
 analyzeLoop (shift, condOp, mathOps) (Math x)
     | shift == 0                                = (shift, condOp + x, mathOps)
@@ -73,12 +84,12 @@ analyzeLoop _ x                                 = error $ "analyzeLoop does not 
 
 copyFromMathOp condVal (offset, value)          = Copy offset value (-condVal)
 
-optimizeLoop loop@(Loop children)               = if hasChildLoops || totalShift /= 0
+optimizeLoop loop@(Loop children)               = if hasNonBasicOps || totalShift /= 0
     then [loop]
     else (map (copyFromMathOp condVal) $ toList mathOps) ++ [(Set 0)]
     where
         children'                               = optimizeLoops children
-        hasChildLoops                           = any isLoop children'
+        hasNonBasicOps                          = not $ all isBasicOp children'
         (totalShift, condVal, mathOps)          = foldl analyzeLoop (0, 0, S.empty) children
 
 optimizeLoops statements                        = concat $ map optimizeIfLoop statements
