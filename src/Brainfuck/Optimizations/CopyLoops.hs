@@ -21,6 +21,7 @@ analyzeLoop (shift, condOp, mathOps) (Math x)
         updatedVal                              = x + (snd $ S.index mathOps prevOpIndex)
         updatedSeq                              = S.update prevOpIndex (shift, updatedVal) mathOps
 analyzeLoop (shift, condOp, mathOps) (Shift x)  = (shift + x, condOp, mathOps)
+analyzeLoop state (Comment str)                 = state
 analyzeLoop _ x                                 = error $ "analyzeLoop does not support statement " ++ (show x)
 
 copyFromMathOp condVal (offset, value)          = Copy offset value (-condVal)

@@ -10,6 +10,7 @@ data Statement
     | Loop [Statement]      -- while(*p) { arg }
     | Input                 -- *p = getchar()
     | Output                -- putchar(*p)
+    | Comment String        -- // arg0
     deriving(Eq)
 
 instance Show Statement where
@@ -29,6 +30,7 @@ instance Show Statement where
     show (Loop s)       = "while(*p) { " ++ (intercalate "; " $ map show s) ++ " }"
     show Input          = "*p = getchar()"
     show Output         = "putchar(*p)"
+    show (Comment str)  = "//" ++ str
 
 isLoop (Loop _) = True
 isLoop _        = False
@@ -48,5 +50,6 @@ parseStatements' (x:xs)
             '<'         -> Shift (-1)
             ','         -> Input
             '.'         -> Output
+            _           -> Comment [x]
         (rest, xs')     = parseStatements' xs
         (rest', xs'')   = parseStatements' xs'
