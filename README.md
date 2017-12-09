@@ -26,7 +26,7 @@ ghc -outputdir bin -isrc -o bin/speedfuck -O2 src/main.hs
 There are three different usage modes
 ```sh
 bin/speedfuck arg '+++++--[->+>++<<]' #passing code via the commandline
-bin/speedfuck file myCode.bf #reading code from a file
+bin/speedfuck file myCode.b #reading code from a file
 bin/speedfuck stdin #reading code from stdin
 ```
 

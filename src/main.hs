@@ -4,9 +4,12 @@ import System.Environment
 import Brainfuck
 import Brainfuck.Optimizations.Grouping
 import Brainfuck.Optimizations.CopyLoops
+import Brainfuck.Optimizations.InlineShift
+import Brainfuck.Optimizations.RemoveNoop
+import Brainfuck.Optimizations.ReorderGrouping
 
 optimizations :: [([Statement] -> [Statement])]
-optimizations = [groupStatements, optimizeLoops]
+optimizations = [groupStatements, optimizeLoops, inlineShifts, removeNoops, reorderAndGroup]
 
 main = do
     args            <- getArgs

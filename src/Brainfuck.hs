@@ -5,7 +5,7 @@ import Data.List
 data Statement
     = Math Int Int          -- p[arg0] += arg1
     | Set Int Int           -- p[arg0] = arg1
-    | Copy Int Int Int      -- p[arg0] = *p * arg1 / arg2
+    | Copy Int Int Int Int  -- p[arg0] = p[arg1] * arg2 + arg3
     | Shift Int             -- p += arg
     | Loop [Statement]      -- while(*p) { arg }
     | Input Int             -- p[arg0] = getchar()
@@ -19,14 +19,14 @@ instance Show Statement where
         | otherwise     = "p[" ++ (show off) ++ "] += " ++ (show val)
     show (Shift x)      = "p += " ++ (show x)
     show (Set off val)  = "p[" ++ (show off) ++ "] = " ++ (show val)
-    show (Copy x y z)   = "p[" ++ (show x) ++ "] = *p" ++ mulStr ++ divStr
+    show (Copy x y z a) = "p[" ++ (show x) ++ "] = p[" ++ (show y) ++ "]" ++ mulStr ++ addStr
         where
-            mulStr      = if y == 1
+            mulStr      = if z == 1
                 then ""
-                else " * " ++ (show y)
-            divStr      = if z == 1
+                else " * " ++ (show z)
+            addStr      = if a == 0
                 then ""
-                else " / " ++ (show z)
+                else " + " ++ (show a)
     show (Loop s)       = "while(*p) { " ++ (intercalate "; " $ map show s) ++ " }"
     show (Input off)    = "p[" ++ (show off) ++ "] = getchar()"
     show (Output off)   = "putchar(p[" ++ (show off) ++ "])"

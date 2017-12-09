@@ -24,7 +24,7 @@ analyzeLoop (shift, condOp, mathOps) (Math off val)
 analyzeLoop (shift, condOp, mathOps) (Shift x)  = (shift + x, condOp, mathOps)
 analyzeLoop state (Comment str)                 = state
 
-copyFromMathOp condVal (offset, value)          = Copy offset value 1
+copyFromMathOp condVal (offset, value)          = Copy offset 0 value 0
 
 optimizeLoop loop@(Loop children)               = if hasNonBasicOps || totalShift /= 0 || condVal /= (-1)
     then [loop]
