@@ -4,7 +4,13 @@ import Brainfuck
 
 inlineShifts' (shift, ops) (Shift off)      = (shift + off, ops)
 inlineShifts' (shift, ops) op@(Comment _)   = (shift, op : ops)
-inlineShifts' (shift, ops) (Loop c)         = (0, (Loop $ inlineShifts c) : (Shift shift) : ops)
+inlineShifts' (shift, ops) (Loop c)         = if newShift == shift
+    then (shift, shiftedLoop : ops)
+    else (0, unshiftedLoop : (Shift shift) : ops)
+    where
+        (newShift, loopOps)                 = foldl inlineShifts' (shift, []) c
+        shiftedLoop                         = Loop $ reverse $ loopOps
+        unshiftedLoop                       = Loop $ inlineShifts c
 inlineShifts' (shift, ops) op               = (shift, newOp : ops)
     where
         newOp                               = case op of

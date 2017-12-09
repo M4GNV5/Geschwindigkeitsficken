@@ -7,9 +7,17 @@ import Brainfuck.Optimizations.CopyLoops
 import Brainfuck.Optimizations.InlineShift
 import Brainfuck.Optimizations.RemoveNoop
 import Brainfuck.Optimizations.ReorderGrouping
+import Brainfuck.Optimizations.ConstantFold
 
 optimizations :: [([Statement] -> [Statement])]
-optimizations = [groupStatements, optimizeLoops, inlineShifts, removeNoops, reorderAndGroup]
+optimizations = [
+        groupStatements,
+        optimizeLoops,
+        inlineShifts,
+        removeNoops,
+        reorderAndGroup,
+        constantFold
+    ]
 
 main = do
     args            <- getArgs
