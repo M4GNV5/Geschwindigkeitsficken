@@ -1,6 +1,7 @@
 module Brainfuck where
 
 import Data.List
+import Data.Maybe
 
 data Expression
     = Const Int             --arg0
@@ -63,6 +64,16 @@ addExpressions expr1 expr2
         (val2, vars2)               = exprToSum expr2
         val                         = val1 + val2
         vars                        = vars1 ++ vars2
+
+isZeroShift statements              = all isJust vals && valSum == 0
+    where
+        vals                        = map getShift statements
+        valSum                      = sum $ catMaybes vals
+        getShift (Shift val)        = Just val
+        getShift (Loop children)    = if isZeroShift children
+            then Just 0
+            else Nothing
+        getShift _                  = Just 0
 
 parseStatements str     = fst $ parseStatements' str
 
