@@ -1,5 +1,6 @@
 module Brainfuck.Optimizations.ConstantFold where
 
+import Data.Char
 import Data.Maybe
 import Data.Traversable
 import Data.Map.Lazy as M
@@ -11,6 +12,9 @@ valuesToOps values                  = valueOps
         valueToOp off (Just val)    = Set off 0 0 val
         valueOpMap                  = M.mapWithKey valueToOp $ M.filter isJust values
         valueOps                    = Prelude.map snd $ toList valueOpMap
+
+isPrint (Print _)   = True
+isPrint _           = False
 
 constantFold' (True, values, ops) curr                  = (True, values, curr : ops)
 constantFold' (False, values, ops) curr                 = case curr of
@@ -26,12 +30,17 @@ constantFold' (False, values, ops) curr                 = case curr of
     Input off                               -> (False, setValue off Nothing, ops)
     Output off                              -> case getValue off of
         Nothing                             -> (False, values, curr : ops)
-        Just val                            -> (False, values, curr : (Set off 0 0 val) : ops)
+        Just val                            -> case firstOp of
+            Just (Print str)                -> (False, values, (Print $ str ++ [chr val]) : tail ops)
+            Nothing                         -> (False, values, (Print [chr val]) : ops)
     Comment _                               -> (False, values, curr : ops)
     where
         setValue off val                    = M.insert off val values
         getValue off                        = fromMaybe (Just 0) $ M.lookup off values
         valueOps                            = valuesToOps values
+        firstOp                             = if Prelude.null ops
+            then Nothing
+            else Just $ head ops
 
 constantFold statements                     = reverse $ valueOps ++ ops
     where
