@@ -36,7 +36,7 @@ instance Show Statement where
     show (Set off val)  = "p[" ++ (show off) ++ "] = " ++ (show val)
     show (Loop s)       = "while(*p) { " ++ (intercalate "; " $ map show s) ++ " }"
     show (Input off)    = "p[" ++ (show off) ++ "] = getchar()"
-    show (Output val)   = "putchar(p[" ++ (show val) ++ "])"
+    show (Output val)   = "putchar(" ++ (show val) ++ ")"
     show (Print str)    = "puts(" ++ (show str) ++ ")"
     show (Comment str)  = "/*" ++ str ++ "*/"
 
