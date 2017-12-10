@@ -6,7 +6,6 @@ import Brainfuck
 
 isNoop (Math _ 0)           = True
 isNoop (Shift 0)            = True
-isNoop (Copy _ _ 0 0)       = True
 isNoop (Comment str)        = all isSpace str
 isNoop _                    = False
 

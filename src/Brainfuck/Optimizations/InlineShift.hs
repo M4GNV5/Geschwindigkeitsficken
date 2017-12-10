@@ -15,8 +15,7 @@ inlineShifts' (shift, ops) op               = (shift, newOp : ops)
     where
         newOp                               = case op of
             Math off val                    -> Math (off + shift) val
-            Set off val                     -> Set (off + shift) val
-            Copy off1 off2 val add          -> Copy (off1 + shift) (off2 + shift) val add
+            Set off1 off2 mul add           -> Set (off1 + shift) (off2 + shift) mul add
             Input off                       -> Input (off + shift)
             Output off                      -> Output (off + shift)
 

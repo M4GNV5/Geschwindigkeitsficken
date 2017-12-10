@@ -8,7 +8,7 @@ import Brainfuck
 
 valuesToOps values                  = valueOps
     where
-        valueToOp off (Just val)    = Set off val
+        valueToOp off (Just val)    = Set off 0 0 val
         valueOpMap                  = M.mapWithKey valueToOp $ M.filter isJust values
         valueOps                    = Prelude.map snd $ toList valueOpMap
 
@@ -17,8 +17,8 @@ constantFold' (False, values, ops) curr                 = case curr of
     Math off val1                           -> case getValue off of
         Nothing                             -> (False, values, curr : ops)
         Just val2                           -> (False, setValue off (Just $ val1 + val2), ops)
-    Set off val                             -> (False, setValue off (Just val), ops)
-    Copy off1 off2 mul add                  -> case getValue off2 of
+    Set off _ 0 val                         -> (False, setValue off (Just val), ops)
+    Set off1 off2 mul add                   -> case getValue off2 of
         Nothing                             -> (False, setValue off1 Nothing, ops)
         Just val                            -> (False, setValue off1 (Just $ val * mul + add), ops)
     Shift _                                 -> (True, values, curr : valueOps ++ ops)
@@ -26,7 +26,7 @@ constantFold' (False, values, ops) curr                 = case curr of
     Input off                               -> (False, setValue off Nothing, ops)
     Output off                              -> case getValue off of
         Nothing                             -> (False, values, curr : ops)
-        Just val                            -> (False, values, curr : (Set off val) : ops)
+        Just val                            -> (False, values, curr : (Set off 0 0 val) : ops)
     Comment _                               -> (False, values, curr : ops)
     where
         setValue off val                    = M.insert off val values

@@ -24,11 +24,11 @@ analyzeLoop (shift, condOp, mathOps) (Math off val)
 analyzeLoop (shift, condOp, mathOps) (Shift x)  = (shift + x, condOp, mathOps)
 analyzeLoop state (Comment str)                 = state
 
-copyFromMathOp condVal (offset, value)          = Copy offset 0 value 0
+copyFromMathOp condVal (offset, value)          = Set offset 0 value 0
 
 optimizeLoop loop@(Loop children)               = if hasNonBasicOps || totalShift /= 0 || condVal /= (-1)
     then [Loop children']
-    else comments ++ optimizedChildren ++ [(Set 0 0)]
+    else comments ++ optimizedChildren ++ [(Set 0 0 0 0)]
     where
         children'                               = optimizeLoops children
         comments                                = filter isComment children

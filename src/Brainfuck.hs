@@ -4,8 +4,7 @@ import Data.List
 
 data Statement
     = Math Int Int          -- p[arg0] += arg1
-    | Set Int Int           -- p[arg0] = arg1
-    | Copy Int Int Int Int  -- p[arg0] = p[arg1] * arg2 + arg3
+    | Set Int Int Int Int   -- p[arg0] = p[arg1] * arg2 + arg3
     | Shift Int             -- p += arg
     | Loop [Statement]      -- while(*p) { arg }
     | Input Int             -- p[arg0] = getchar()
@@ -18,15 +17,17 @@ instance Show Statement where
         | val < 0       = "p[" ++ (show off) ++ "] -= " ++ (show (-val))
         | otherwise     = "p[" ++ (show off) ++ "] += " ++ (show val)
     show (Shift x)      = "p += " ++ (show x)
-    show (Set off val)  = "p[" ++ (show off) ++ "] = " ++ (show val)
-    show (Copy x y z a) = "p[" ++ (show x) ++ "] = p[" ++ (show y) ++ "]" ++ mulStr ++ addStr
+    show (Set x y z a) = "p[" ++ (show x) ++ "] = " ++ mulStr ++ addStr
         where
-            mulStr      = if z == 1
-                then ""
-                else " * " ++ (show z)
-            addStr      = if a == 0
-                then ""
-                else " + " ++ (show a)
+            mulStr      = case z of
+                0       -> ""
+                1       -> "p[" ++ (show y) ++ "]"
+                _       -> "p[" ++ (show y) ++ "] * " ++ (show z)
+            addStr
+                | z == 0    = show a
+                | a == 0    = ""
+                | a < 0     = " - " ++ (show (-a))
+                | otherwise = " + " ++ (show a)
     show (Loop s)       = "while(*p) { " ++ (intercalate "; " $ map show s) ++ " }"
     show (Input off)    = "p[" ++ (show off) ++ "] = getchar()"
     show (Output off)   = "putchar(p[" ++ (show off) ++ "])"
