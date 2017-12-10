@@ -8,6 +8,7 @@ import Brainfuck.Optimizations.InlineShift
 import Brainfuck.Optimizations.RemoveNoop
 import Brainfuck.Optimizations.ReorderGrouping
 import Brainfuck.Optimizations.ConstantFold
+import Brainfuck.Optimizations.TrailingUnused
 
 optimizations :: [([Statement] -> [Statement])]
 optimizations = [
@@ -16,7 +17,8 @@ optimizations = [
         inlineShifts,
         removeNoops,
         reorderAndGroup,
-        constantFold
+        constantFold,
+        removeTrailing
     ]
 
 main = do
