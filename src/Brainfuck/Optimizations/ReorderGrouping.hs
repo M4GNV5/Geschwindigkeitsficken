@@ -5,27 +5,33 @@ import Data.Maybe
 
 import Brainfuck
 
-isBlocker off1 stmt          = case stmt of
+exprUses off1 expr          = case expr of
+    Const _                 -> False
+    Var _ 0                 -> False
+    Var off2 _              -> off1 == off2
+    Sum _ vars              -> any (\(off2, mul) -> off1 == off2 && mul /= 0) vars
+
+isBlocker off1 stmt         = case stmt of
     Shift _                 -> True --Shifts shoud've been removed by InlineShift
     Loop _                  -> True
     Input off2              -> off1 == off2
-    Output off2             -> off1 == off2
-    Set _ _ 0 _             -> False
-    Set _ off2 _ _          -> off1 == off2
+    Output val              -> exprUses off1 val
+    Add _ val               -> exprUses off1 val
+    Set _ val               -> exprUses off1 val
     _                       -> False
 
 assignsTo needle stmt       = case stmt of
-    Math off _              -> off == needle
-    Set off _ _ _           -> off == needle
+    Add off _               -> off == needle
+    Set off _               -> off == needle
     _                       -> False
 
 opsBeforeBlocker off rest   = filter (assignsTo off) $ takeWhile (not . isBlocker off) rest
 
 groupOps stmt1 stmt2        = case stmt2 of
-    Math off val2           -> case stmt1 of
-        Math _ val1         -> Math off (val1 + val2)
-        Set _ src mul val1  -> Set off src mul (val1 + val2)
-    Set _ _ _ _             -> stmt2
+    Add off val2            -> case stmt1 of
+        Add _ val1          -> Add off $ addExpressions val1 val2
+        Set _ val1          -> Set off $ addExpressions val1 val2
+    Set _ _                 -> stmt2
 
 reorderAndGroup' ops []     = ops
 reorderAndGroup' ops (curr:rest)
@@ -37,8 +43,8 @@ reorderAndGroup' ops (curr:rest)
         Loop children       = curr
         optimizedLoop       = Loop $ reorderAndGroup children
         offset              = case curr of
-            Math off _      -> Just off
-            Set off _ _ _   -> Just off
+            Add off _       -> Just off
+            Set off _       -> Just off
             _               -> Nothing
         off                 = fromJust offset
         prev                = opsBeforeBlocker off ops

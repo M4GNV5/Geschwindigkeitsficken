@@ -2,8 +2,8 @@ module Brainfuck.Optimizations.Grouping where
 
 import Brainfuck
 
-groupStatement ((Math off1 val1):rest) curr@(Math off2 val2)
-    | off1 == off2                              = (Math off1 $ val1 + val2) : rest
+groupStatement ((Add off1 val1):rest) curr@(Add off2 val2)
+    | off1 == off2                              = (Add off1 $ addExpressions val1 val2) : rest
     | otherwise                                 = curr : rest
 groupStatement ((Shift x):rest) (Shift y)       = (Shift $ x + y) : rest
 groupStatement ((Comment x):rest) (Comment y)   = (Comment $ x ++ y) : rest
