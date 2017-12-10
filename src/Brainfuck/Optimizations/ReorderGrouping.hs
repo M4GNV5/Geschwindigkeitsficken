@@ -2,52 +2,53 @@ module Brainfuck.Optimizations.ReorderGrouping (reorderAndGroup) where
 
 import Data.List
 import Data.Maybe
+import Data.Foldable
+import qualified Data.Sequence as S
 
 import Brainfuck
 
-exprUses off1 expr          = case expr of
-    Const _                 -> False
-    Var _ 0                 -> False
-    Var off2 _              -> off1 == off2
-    Sum _ vars              -> any (\(off2, mul) -> off1 == off2 && mul /= 0) vars
+getExprSources expr                 = case expr of
+    Const _                         -> []
+    Var off _                       -> [off]
+    Sum _ vars                      -> map fst vars
 
-isBlocker off1 stmt         = case stmt of
-    Shift _                 -> True --Shifts shoud've been removed by InlineShift
-    Loop _                  -> True
-    Input off2              -> off1 == off2
-    Output val              -> exprUses off1 val
-    Add _ val               -> exprUses off1 val
-    Set _ val               -> exprUses off1 val
-    _                       -> False
+getSources stmt                     = case stmt of
+    Add _ expr                      -> getExprSources expr
+    Set _ expr                      -> getExprSources expr
+    Output expr                     -> getExprSources expr
+    _                               -> []
 
-assignsTo needle stmt       = case stmt of
-    Add off _               -> off == needle
-    Set off _               -> off == needle
-    _                       -> False
+assigntsTo off1 stmt                = case stmt of
+    Set off2 _                      -> off1 == off2
+    Input off2                      -> off1 == off2
+    Loop children                   -> (not . isZeroShift) children || any (assigntsTo off1) children
+    _                               -> False
 
-opsBeforeBlocker off rest   = filter (assignsTo off) $ takeWhile (not . isBlocker off) rest
+isAddTo off1 stmt                   = case stmt of
+    Add off2 _                      -> off1 == off2
+    _                               -> False
 
-groupOps stmt1 stmt2        = case stmt2 of
-    Add off val2            -> case stmt1 of
-        Add _ val1          -> Add off $ addExpressions val1 val2
-        Set _ val1          -> Set off $ addExpressions val1 val2
-    Set _ _                 -> stmt2
+usesOffset off stmt                 = off `elem` (getSources stmt) || assigntsTo off stmt || isAddTo off stmt
 
-reorderAndGroup' ops []     = ops
-reorderAndGroup' ops (curr:rest)
-    | isLoop curr           = reorderAndGroup' (optimizedLoop : ops) rest
-    | isNothing offset      = reorderAndGroup' (curr : ops) rest
-    | null prev             = reorderAndGroup' (grouped : ops) rest
-    | otherwise             = reorderAndGroup' ops rest
+reorderAndGroup' ops curr
+    | isNothing off                 = curr S.<| ops
+    | isNothing nextUse             = ops
+    | assigntsTo off' nextUseOp     = ops
+    | isAddTo off' nextUseOp        = S.update nextUse' grouped ops
+    | otherwise                     = S.insertAt nextUse' curr ops
     where
-        Loop children       = curr
-        optimizedLoop       = Loop $ reorderAndGroup children
-        offset              = case curr of
-            Add off _       -> Just off
-            Set off _       -> Just off
-            _               -> Nothing
-        off                 = fromJust offset
-        prev                = opsBeforeBlocker off ops
-        grouped             = foldl groupOps curr $ opsBeforeBlocker off rest
+        off                         = case curr of
+            Add off _               -> Just off
+            Set off _               -> Just off
+            _                       -> Nothing
+        off'                        = fromJust off
+        nextUse                     = S.findIndexL (usesOffset off') ops
+        nextUse'                    = fromJust nextUse
+        nextUseOp                   = S.index ops nextUse'
+        Add _ nextUseVal            = nextUseOp
+        grouped                     = case curr of
+            Set _ val               -> Set off' $ addExpressions val nextUseVal
+            Add _ val               -> Add off' $ addExpressions val nextUseVal
 
-reorderAndGroup statements  = reverse $ reorderAndGroup' [] statements
+
+reorderAndGroup statements          = toList $ foldl reorderAndGroup' S.empty (reverse statements)
