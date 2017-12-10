@@ -34,3 +34,44 @@ bin/speedfuck stdin #reading code from stdin
 
 Currently the output is pseudo C-like code, but outputting actual assembly
 and passing it to `as` is planned.
+
+### Examples
+
+Compiling the popular Hello World! program
+```b
+++++++++++[>+++++++>++++++++++>+++>+<<<<-]>++.>+.+++++++..+++.>++.<<+++++++++++++++.>.+++.------.--------.>+.>.
+```
+outputs
+```sh
+puts("Hello World!\n")
+```
+
+Well duh! But thats kind of boring so lets take a simpler program and disable constant folding:
+```sh
+$ bin/speedfuck -Oconstfold -code '++>++[->++++<]<[->>+++<<]>>++'
+
+# Nothing? thats because all statements after the last . are removed by -Otrailing
+
+$ bin/speedfuck -Oconstfold -code '++>+++[->++++<]<++[->>+++<<]>>++.'
+p[0] += 4
+p[1] += 3
+p[2] += p[1] * 4 + p[0] * 3 + 2
+putchar(p[2])
+
+#That looks more like it! as you can see it successfully optimizes the two loops
+# to a single Add statement and it merged the two + at the beginning with the
+# two + before the second loop. Lets see what happens to the latter optimization
+# when we print cell 0 between the two adds
+
+$ bin/speedfuck -Oconstfold -code '++>+++[->++++<]<.++[->>+++<<]>>++.'
+p[0] += 2
+putchar(p[0])
+p[0] += 2
+p[1] += 3
+p[2] += p[1] * 4 + p[0] * 3 + 2
+putchar(p[2])
+
+#As you can see the two Adds are splitted into two divided by a putchar. But
+# more importantly the two loops are completely optimized to a single Add even
+# though the first one was before the putchar(p[0])
+```
