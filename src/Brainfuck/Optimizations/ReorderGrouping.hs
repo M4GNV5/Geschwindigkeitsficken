@@ -26,9 +26,15 @@ assignsTo off1 stmt                 = case stmt of
 
 addsTo off1 stmt                    = case stmt of
     Add off2 _                      -> off1 == off2
+    Loop children                   -> any (addsTo off1) children
     _                               -> False
 
-changes off stmt                    = assignsTo off stmt || addsTo off stmt
+changes off1 stmt                   = case stmt of
+    Add off2 _                      -> off1 == off2
+    Set off2 _                      -> off1 == off2
+    Input off2                      -> off1 == off2
+    Loop children                   -> any (changes off1) children
+    _                               -> False
 
 isShift stmt                        = case stmt of
     Shift _                         -> True
@@ -47,7 +53,7 @@ reorderAndGroup' ops curr
     | isNothing off                 = curr S.<| ops
     | isNothing nextUse             = ops S.|> curr
     | assignsTo off' nextUseOp      = ops
-    | addsTo off' nextUseOp         = S.update nextUse' grouped ops
+    | canGroup                      = S.update nextUse' grouped ops
     | otherwise                     = S.insertAt nextUse' curr ops
     where
         Loop children               = curr
@@ -61,6 +67,7 @@ reorderAndGroup' ops curr
         nextUse                     = S.findIndexL (isBlocker off' sources) ops
         nextUse'                    = fromJust nextUse
         nextUseOp                   = S.index ops nextUse'
+        canGroup                    = addsTo off' nextUseOp && (not . isLoop) nextUseOp
         Add _ nextUseVal            = nextUseOp
         grouped                     = case curr of
             Set _ val               -> Set off' $ addExpressions val nextUseVal
