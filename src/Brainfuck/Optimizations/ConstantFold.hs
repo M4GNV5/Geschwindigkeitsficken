@@ -1,5 +1,6 @@
 module Brainfuck.Optimizations.ConstantFold (constantFold) where
 
+import Data.Word
 import Data.Char
 import Data.Maybe
 import Data.Either
@@ -27,14 +28,14 @@ getChangedOffs shift (curr:rest)
 
 valuesToOps values                  = valueOps
     where
-        valueToOp off (Just val)    = Set off (Const val)
+        valueToOp off (Just val)    = Set off (Const $ fromIntegral val)
         valueOpMap                  = M.mapWithKey valueToOp $ M.filter isJust values
         valueOps                    = map snd $ M.toList valueOpMap
 
 evaluateExpr defVal values expr     = case expr of
     Const _                         -> expr
     Var off mul                     -> case getValue off of
-        Just val                    -> Const $ val * mul
+        Just val                    -> Const $ fromIntegral $ (fromIntegral mul) * (fromIntegral val)
         Nothing                     -> expr
     Sum val vars                    -> evaluateSum val vars
     where
@@ -45,25 +46,24 @@ evaluateExpr defVal values expr     = case expr of
             | otherwise             = Sum valSum nonConstVars
             where
                 getVar off mul      = case getValue off of
-                    Just val        -> Left $ val * mul
-                    Nothing         -> Right (off, mul)
+                    Just val        -> Left $ (fromIntegral mul) * (fromIntegral val)
+                    Nothing         -> Right (off, fromIntegral mul)
                 varVals             = map (uncurry getVar) vars
-                valSum              = val + (sum $ lefts varVals)
+                valSum              = (fromIntegral val) + (sum $ lefts varVals)
                 nonConstVars        = rights varVals
                 singleNonConstVar   = valSum == 0 && length nonConstVars == 1
 
---TODO do we really need to reset values when we encounter a Loop?
 constantFold' (defVal, values, ops) curr    = case curr of
     Add off expr                            -> case getValue off of
         Nothing                             -> (defVal, values, (Add off $ evaluateExpr defVal values expr) : ops)
         Just val2                           -> case evaluateExpr defVal values expr of
-            Const val1                      -> (defVal, setValue off (Just $ val1 + val2), ops)
+            Const val1                      -> (defVal, setValue off (Just $ (fromIntegral val1) + val2), ops)
             expr'                           -> (defVal, setValue off Nothing, simplifiedExpr : ops)
                 where
-                    simplifiedExpr          = Add off $ addExpressions expr' (Const val2)
+                    simplifiedExpr          = Add off $ addExpressions expr' (Const $ fromIntegral val2)
 
     Set off expr                            -> case evaluateExpr defVal values expr of
-        Const val                           -> (defVal, setValue off (Just val), ops)
+        Const val                           -> (defVal, setValue off (Just $ fromIntegral val), ops)
         expr'                               -> (defVal, setValue off Nothing, (Set off expr') : ops)
 
     Shift _                                 -> (Nothing, M.empty, curr : valueOps ++ ops)
@@ -95,5 +95,8 @@ constantFold' (defVal, values, ops) curr    = case curr of
 
 constantFold statements                     = reverse $ valueOps ++ ops
     where
-        (_, values, ops)                    = foldl constantFold' (Just 0, M.empty, []) statements
+        --the typing of 0 here is important as from its type the whole type
+        --structure of constantFold' can be deduced to work on Word8's so that
+        --0 - 1 == 255 (just as in brainfuck)
+        (_, values, ops)                    = foldl constantFold' (Just (0 :: Word8), M.empty, []) statements
         valueOps                            = valuesToOps values
