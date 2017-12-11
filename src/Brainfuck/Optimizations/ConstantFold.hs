@@ -1,4 +1,4 @@
-module Brainfuck.Optimizations.ConstantFold where
+module Brainfuck.Optimizations.ConstantFold (constantFold) where
 
 import Data.Char
 import Data.Maybe

@@ -1,4 +1,4 @@
-module Brainfuck.Optimizations.Grouping where
+module Brainfuck.Optimizations.Grouping (groupStatements) where
 
 import Brainfuck
 

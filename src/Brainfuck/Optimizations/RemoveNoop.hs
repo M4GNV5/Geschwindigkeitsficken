@@ -1,4 +1,4 @@
-module Brainfuck.Optimizations.RemoveNoop where
+module Brainfuck.Optimizations.RemoveNoop (removeNoops) where
 
 import Data.Char
 

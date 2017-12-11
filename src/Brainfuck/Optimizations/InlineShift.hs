@@ -1,4 +1,4 @@
-module Brainfuck.Optimizations.InlineShift where
+module Brainfuck.Optimizations.InlineShift (inlineShifts) where
 
 import Brainfuck
 
@@ -8,13 +8,13 @@ shiftExpression shift (Sum val vars)        = Sum val $ map (\(off, mul) -> (shi
 
 inlineShifts' (shift, ops) (Shift off)      = (shift + off, ops)
 inlineShifts' (shift, ops) op@(Comment _)   = (shift, op : ops)
-inlineShifts' (shift, ops) (Loop c)         = if newShift == shift
+inlineShifts' (shift, ops) (Loop children)  = if newShift == shift
     then (shift, shiftedLoop : ops)
     else (0, unshiftedLoop : (Shift shift) : ops)
     where
-        (newShift, loopOps)                 = foldl inlineShifts' (shift, []) c
+        (newShift, loopOps)                 = foldl inlineShifts' (shift, []) children
         shiftedLoop                         = Loop $ reverse $ loopOps
-        unshiftedLoop                       = Loop $ inlineShifts c
+        unshiftedLoop                       = Loop children
 inlineShifts' (shift, ops) op               = (shift, newOp : ops)
     where
         newOp                               = case op of

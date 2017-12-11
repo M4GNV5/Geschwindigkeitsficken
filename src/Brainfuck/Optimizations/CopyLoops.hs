@@ -1,4 +1,4 @@
-module Brainfuck.Optimizations.CopyLoops where
+module Brainfuck.Optimizations.CopyLoops (optimizeLoops) where
 
 import Data.Maybe
 import Data.Foldable
