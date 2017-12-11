@@ -13,9 +13,9 @@ constOperand val            = "$" ++ show val
 memOperand 0                = "(" ++ ptr ++ ")"
 memOperand off              = (show off) ++ "(" ++ ptr ++ ")"
 
-load off reg                = "mov " ++ (memOperand off) ++ ", " ++ reg
-loadConst val reg           = "mov " ++ (constOperand val) ++ ", " ++ reg
-store reg off               = "mov " ++ reg ++ ", " ++ (memOperand off)
+load off reg                = "movb " ++ (memOperand off) ++ ", " ++ reg
+loadConst val reg           = "movb " ++ (constOperand val) ++ ", " ++ reg
+store reg off               = "movb " ++ reg ++ ", " ++ (memOperand off)
 storeConst val off          = store (constOperand val) off
 
 mov regA regB               = "mov " ++ regA ++ ", " ++ regB
