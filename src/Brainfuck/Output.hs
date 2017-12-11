@@ -76,7 +76,7 @@ compileStatement (loops, strings, ops) stmt
     Add off val             -> (loops, strings, addExprMem off val ++ ops)
     Set off val             -> (loops, strings, setExprMem off val ++ ops)
     Shift off               -> (loops, strings, addConst off ptr : ops)
-    Input off               -> (loops, strings, call "bfgetchar" (memOperand off) ++ ops)
+    Input off               -> (loops, strings, store reg1 off : call "bfgetchar" (memOperand off) ++ ops)
     Output val              -> (loops, strings, outputExpr val ++ ops)
     Comment str             -> (loops, strings, ("/*" ++ str ++ "*/") : ops)
 
