@@ -17,5 +17,5 @@ isNoop _                    = False
 removeNoops statements      = map removeNoops' $ filter (not . isNoop) statements
     where
         removeNoops' x      = case x of
-            Loop children   -> Loop $ removeNoops children
+            Loop off c      -> Loop off $ removeNoops c
             _               -> x

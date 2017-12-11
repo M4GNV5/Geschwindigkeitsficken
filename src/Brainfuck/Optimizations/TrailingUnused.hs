@@ -5,7 +5,7 @@ import Data.List
 import Brainfuck
 
 isIOStatement stmt          = case stmt of
-    Loop children           -> any isIOStatement children
+    Loop _ children         -> any isIOStatement children
     Input _                 -> True
     Output _                -> True
     Print _                 -> True

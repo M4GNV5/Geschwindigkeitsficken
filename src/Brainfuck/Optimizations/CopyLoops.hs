@@ -27,8 +27,8 @@ analyzeLoop (shift, condOp, mathOps) (Shift x)  = (shift + x, condOp, mathOps)
 analyzeLoop state (Comment _)                   = state
 
 --TODO more loop optimizations when there are Set statements inside or condVal is not -1
-optimizeLoop loop@(Loop children)               = if hasNonBasicOps || totalShift /= 0 || condVal /= (-1)
-    then [Loop children']
+optimizeLoop loop@(Loop off children)           = if hasNonBasicOps || totalShift /= 0 || condVal /= (-1)
+    then [Loop off children']
     else comments ++ optimizedChildren ++ [(Set 0 (Const 0))]
     where
         children'                               = optimizeLoops children

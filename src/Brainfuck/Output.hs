@@ -80,10 +80,10 @@ compileStatement (loops, strings, ops) stmt
     Output val              -> (loops, strings, outputExpr val ++ ops)
     Comment str             -> (loops, strings, ("/*" ++ str ++ "*/") : ops)
 
-    Loop children           -> (l, s, ops''')
+    Loop off children       -> (l, s, ops''')
         where
             loopName        = "loop" ++ (show loops)
-            ops'            = ("je " ++ loopName ++ "end") : (cmpConstMem 0 0) : (loopName ++ ":") : ops
+            ops'            = ("je " ++ loopName ++ "end") : (cmpConstMem 0 off) : (loopName ++ ":") : ops
             (l, s, ops'')   = foldl compileStatement (loops + 1, strings, ops') children
             ops'''          = (loopName ++ "end:") : ("jmp " ++ loopName) : ops''
 

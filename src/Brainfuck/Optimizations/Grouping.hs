@@ -7,7 +7,7 @@ groupStatement ((Add off1 val1):rest) curr@(Add off2 val2)
     | otherwise                                 = curr : rest
 groupStatement ((Shift x):rest) (Shift y)       = (Shift $ x + y) : rest
 groupStatement ((Comment x):rest) (Comment y)   = (Comment $ x ++ y) : rest
-groupStatement rest (Loop children)             = (Loop $ groupStatements children) : rest
+groupStatement rest (Loop off children)         = (Loop off $ groupStatements children) : rest
 groupStatement rest curr                        = curr : rest
 
 groupStatements statements                      = reverse $ foldl groupStatement [] statements

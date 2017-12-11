@@ -14,7 +14,7 @@ getChangedOffs shift (curr:rest)
     | isJust off                    = (shift + fromJust off) : restOffs
     | otherwise                     = restOffs
     where
-        Loop children               = curr
+        Loop _ children             = curr
         newShift                    = case curr of
             Shift x                 -> shift + x
             _                       -> shift
@@ -68,7 +68,7 @@ constantFold' (defVal, values, ops) curr    = case curr of
 
     Shift _                                 -> (Nothing, M.empty, curr : valueOps ++ ops)
 
-    Loop children                           -> if isZeroShift children
+    Loop _ children                         -> if isZeroShift children
         then (defVal, newValues, curr : ops)
         else (Nothing, M.empty, curr : valueOps ++ ops)
         where

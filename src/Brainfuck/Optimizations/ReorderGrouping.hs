@@ -16,29 +16,30 @@ getSources stmt                     = case stmt of
     Add _ expr                      -> getExprSources expr
     Set _ expr                      -> getExprSources expr
     Output expr                     -> getExprSources expr
+    Loop off children               -> off : (concat $ map getSources children)
     _                               -> []
 
 assignsTo off1 stmt                 = case stmt of
     Set off2 _                      -> off1 == off2
     Input off2                      -> off1 == off2
-    Loop children                   -> any (assignsTo off1) children
+    Loop _ children                 -> any (assignsTo off1) children
     _                               -> False
 
 addsTo off1 stmt                    = case stmt of
     Add off2 _                      -> off1 == off2
-    Loop children                   -> any (addsTo off1) children
+    Loop _ children                 -> any (addsTo off1) children
     _                               -> False
 
 changes off1 stmt                   = case stmt of
     Add off2 _                      -> off1 == off2
     Set off2 _                      -> off1 == off2
     Input off2                      -> off1 == off2
-    Loop children                   -> any (changes off1) children
+    Loop _ children                 -> any (changes off1) children
     _                               -> False
 
 isShift stmt                        = case stmt of
     Shift _                         -> True
-    Loop children                   -> (not . isZeroShift) children
+    Loop _ children                 -> (not . isZeroShift) children
     _                               -> False
 
 isBlocker off sources stmt          = usesOff || changesOff || changesSource || shifts
@@ -49,14 +50,14 @@ isBlocker off sources stmt          = usesOff || changesOff || changesSource || 
         shifts                      = isShift stmt
 
 reorderAndGroup' ops curr
-    | isZeroShiftLoop               = (Loop $ reorderAndGroup children) S.<| ops
+    | isZeroShiftLoop               = (Loop loopOff $ reorderAndGroup children) S.<| ops
     | isNothing off                 = curr S.<| ops
     | isNothing nextUse             = ops S.|> curr
-    | assignsTo off' nextUseOp      = ops
+    | canDrop                       = ops
     | canGroup                      = S.update nextUse' grouped ops
     | otherwise                     = S.insertAt nextUse' curr ops
     where
-        Loop children               = curr
+        Loop loopOff children       = curr
         isZeroShiftLoop             = isLoop curr && isZeroShift children
         off                         = case curr of
             Add off _               -> Just off
@@ -67,7 +68,8 @@ reorderAndGroup' ops curr
         nextUse                     = S.findIndexL (isBlocker off' sources) ops
         nextUse'                    = fromJust nextUse
         nextUseOp                   = S.index ops nextUse'
-        canGroup                    = addsTo off' nextUseOp && (not . isLoop) nextUseOp
+        canDrop                     = (not . isLoop) nextUseOp && assignsTo off' nextUseOp
+        canGroup                    = (not . isLoop) nextUseOp && addsTo off' nextUseOp
         Add _ nextUseVal            = nextUseOp
         grouped                     = case curr of
             Set _ val               -> Set off' $ addExpressions val nextUseVal
