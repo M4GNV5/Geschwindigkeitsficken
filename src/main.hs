@@ -1,8 +1,14 @@
 import Data.List
 import Data.Maybe
+import System.IO
+import System.Exit
+import System.Process
+import System.FilePath
+import System.Directory
 import System.Environment
 
 import Brainfuck
+import Brainfuck.Output
 import Brainfuck.Optimizations.Grouping
 import Brainfuck.Optimizations.CopyLoops
 import Brainfuck.Optimizations.InlineShift
@@ -23,7 +29,7 @@ optimizations = [
     ]
 
 validOptions = [
-        "i", "o", "code",
+        "i", "o", "code", "pseudo",
         "Onone", "Ogroup", "Ocopyloop", "Oshifts", "Onoop", "Ogroup2", "Oconstfold", "Otrailing"
     ]
 
@@ -37,6 +43,29 @@ parseOptions (curr:rest)
             else curr
         hasTextArg          = (not . null) rest && (head $ head rest) /= '-'
         textArg             = head rest
+
+assembleAndLink asm out     = do
+    tmpDir                  <- getTemporaryDirectory
+    (path, fd)              <- openTempFile tmpDir "bf.S"
+
+    selfDir                 <- takeDirectory <$> getExecutablePath
+    let enviroment          = selfDir ++ "/environment.o"
+
+    hPutStr fd asm
+    hPutChar fd '\n'
+    hFlush fd
+
+    asExit                  <- system $ "as " ++ path ++ " -o " ++ path ++ ".o"
+    case asExit of
+        ExitSuccess         -> return ()
+        ExitFailure code    -> error $ "as exited with code " ++ (show code)
+
+    ldExit                  <- system $ "ld " ++ path ++ ".o " ++ enviroment ++ " -o " ++ out
+    case ldExit of
+        ExitSuccess         -> return ()
+        ExitFailure code    -> error $ "ld exited with code " ++ (show code)
+
+    return ()
 
 main = do
     args                    <- getArgs
@@ -79,5 +108,8 @@ main = do
     let code                = parseStatements input
         optimizations'      = map snd $ filter ((enabledOs!!) . fst) $ zip [0..] optimizations
         optimized           = foldl (flip ($)) code optimizations'
+        labelNames          = map show [0..]
 
-    putStrLn $ intercalate "\n" $ map show optimized
+    if getSwitch False "pseudo"
+        then putStrLn $ intercalate "\n" $ map show optimized
+        else assembleAndLink (compileStatements optimized) (getOption "a.out" "o")
