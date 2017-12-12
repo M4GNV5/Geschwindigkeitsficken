@@ -1,5 +1,6 @@
 module Brainfuck where
 
+import Data.Char
 import Data.List
 import Data.Maybe
 
@@ -39,7 +40,7 @@ instance Show Statement where
     show (Input off)    = "p[" ++ (show off) ++ "] = getchar()"
     show (Output val)   = "putchar(" ++ (show val) ++ ")"
     show (Print str)    = "puts(" ++ (show str) ++ ")"
-    show (Comment str)  = "/*" ++ str ++ "*/"
+    show (Comment str)  = "/*" ++ (dropWhile isSpace $ dropWhileEnd isSpace str) ++ "*/"
 
 isLoop (Loop _ _)       = True
 isLoop _                = False

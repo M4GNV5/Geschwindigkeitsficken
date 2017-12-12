@@ -1,5 +1,6 @@
 module Brainfuck.Output where
 
+import Data.Char
 import Data.List
 
 import Brainfuck
@@ -78,7 +79,6 @@ compileStatement (loops, strings, ops) stmt
     Shift off               -> (loops, strings, addConst off ptr : ops)
     Input off               -> (loops, strings, store reg1 off : call "bfgetchar" (memOperand off) ++ ops)
     Output val              -> (loops, strings, outputExpr val ++ ops)
-    Comment str             -> (loops, strings, ("/*" ++ str ++ "*/") : ops)
 
     Loop off children       -> (l, s, ops''')
         where
@@ -92,6 +92,10 @@ compileStatement (loops, strings, ops) stmt
             callOp          = "call bfputs"
             arg0Op          = mov ("$str" ++ (show $ length strings)) "%rax"
             arg1Op          = mov (constOperand $ 1 + length str) "%rcx"
+
+    Comment str             -> (loops, strings, ("/*" ++ trimmed ++ "*/") : ops)
+        where
+            trimmed         = dropWhile isSpace $ dropWhileEnd isSpace str
 
 compileStatements stmts     = stringsHead ++ stringsBody ++ asmHead ++ asmBody ++ asmTail
     where

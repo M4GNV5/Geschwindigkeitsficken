@@ -11,9 +11,4 @@ isIOStatement stmt          = case stmt of
     Print _                 -> True
     _                       -> False
 
-removeTrailing statements
-    | null ioStatements     = []
-    | otherwise             = take usedStatementsCount statements
-    where
-        ioStatements        = findIndices isIOStatement statements
-        usedStatementsCount = 1 + last ioStatements
+removeTrailing statements   = dropWhileEnd (not . isIOStatement) statements
