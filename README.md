@@ -3,7 +3,7 @@
 [Brainfuck](https://en.wikipedia.org/wiki/Brainfuck) is an esoteric (aka joke)
 programming language invented by Urban Müller in 1993. This project aims at
 compiling and more importantly optimizing code written in Brainfuck. If you
-want to know more about optimizing brainfuck i recommend [Mats Linander](http://calmerthanyouare.org/2015/01/07/optimizing-brainfuck.html) blog
+want to know more about optimizing brainfuck i recommend [Mats Linander](http://calmerthanyouare.org/2015/01/07/optimizing-brainfuck.html)s blog
 post about it. There is also a list of similar projects [on this page](https://github.com/lifthrasiir/esotope-bfc/wiki/Comparison).
 
 ### Name
@@ -22,18 +22,6 @@ cd Geschwindigkeitsficken
 mkdir bin
 ghc -outputdir bin -isrc -o bin/speedfuck -O2 src/main.hs
 ```
-
-### Usage
-
-There are three different usage modes
-```sh
-bin/speedfuck arg '+++++--[->+>++<<]' #passing code via the commandline
-bin/speedfuck file myCode.b #reading code from a file
-bin/speedfuck stdin #reading code from stdin
-```
-
-Currently the output is pseudo C-like code, but outputting actual assembly
-and passing it to `as` is planned.
 
 ### Examples
 
@@ -75,3 +63,26 @@ putchar(p[2])
 # more importantly the two loops are completely optimized to a single Add even
 # though the first one was before the putchar(p[0])
 ```
+
+### Command line options
+
+#### Generic
+Either `-i` or `-code` must be given.
+- `-i <file>` specifies an input file
+- `-o <file>` specifies the output file (default: `a.out`)
+- `-code <code>` passes code through a command line option rather than reading it from a file
+- `-pseudo` output pseudo C-like code rather than a compiled executable
+
+#### Optimization
+By default all optimizations are enabled and can be disabled using the specific
+`-O` switch. Using `-Onone` disables all optimizations and allows to enable
+specific ones using the corresponding `-O` switch.
+
+- `-Onone` Disables all optimizations by default
+- `-Ogroup` groups censecutive `+`, `-` and `>`, `<` together.
+- `-Ocopyloop` optimize `[->++<]` to `p[1] = p[0] * 2; p[0] = 0;`
+- `-Oshifts` optimize `++>++` to `p[0] += 2; p[1] += 2;`
+- `-Onoop` removes noops (e.g. `++--`)
+- `-Ogroup2` reorders and groups statements. e.g. `++>++<++` turns into `p[0] += 4; p[1] += 2`
+- `-Oconstfold` evaluate the program as much as possible. This turns programs without `,` into single `puts` statements
+- `-Otrailing` remove all instructions after the last `,` or `.`
