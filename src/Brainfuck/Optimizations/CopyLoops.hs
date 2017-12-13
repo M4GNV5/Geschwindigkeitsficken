@@ -4,14 +4,15 @@ import Data.Maybe
 import Data.Foldable
 import qualified Data.Sequence as S
 
-import Debug.Trace
-
 import Brainfuck
 
 isBasicOp (Add _ (Const _)) = True
 isBasicOp (Shift _)         = True
 isBasicOp (Comment _)       = True
 isBasicOp _                 = False
+
+--TODO optimize ifs and infinite loops
+--TODO more loop optimizations when there are Set statements inside or condVal is not -1
 
 analyzeLoop (shift, condOp, mathOps) (Add off (Const val))
     | shift == 0 && off == 0                    = (shift, condOp + val, mathOps)
@@ -26,7 +27,6 @@ analyzeLoop (shift, condOp, mathOps) (Add off (Const val))
 analyzeLoop (shift, condOp, mathOps) (Shift x)  = (shift + x, condOp, mathOps)
 analyzeLoop state (Comment _)                   = state
 
---TODO more loop optimizations when there are Set statements inside or condVal is not -1
 optimizeLoop loop@(Loop off children)           = if hasNonBasicOps || totalShift /= 0 || condVal /= (-1)
     then [Loop off children']
     else comments ++ optimizedChildren ++ [(Set 0 (Const 0))]

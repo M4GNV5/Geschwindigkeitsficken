@@ -6,6 +6,7 @@ import Data.Maybe
 import Data.Either
 import Data.Traversable
 import qualified Data.Map.Lazy as M
+import qualified Data.Set as S
 
 import Brainfuck
 
@@ -69,10 +70,12 @@ constantFold' (defVal, values, ops) curr    = case curr of
     Shift _                                 -> (Nothing, M.empty, curr : valueOps ++ ops)
 
     Loop _ children                         -> if isZeroShift children
-        then (defVal, newValues, curr : ops)
+        then (defVal, newValues, curr : usedValueOps ++ ops)
         else (Nothing, M.empty, curr : valueOps ++ ops)
         where
             burntOffsets                    = getChangedOffs 0 children
+            burntValues                     = M.restrictKeys values (S.fromList burntOffsets)
+            usedValueOps                    = valuesToOps burntValues
             newValues                       = foldl (\m off -> M.insert off Nothing m) values burntOffsets
 
     Input off                               -> (defVal, setValue off Nothing, curr : ops)
