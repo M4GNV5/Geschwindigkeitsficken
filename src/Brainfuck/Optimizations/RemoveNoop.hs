@@ -6,7 +6,7 @@ import Brainfuck
 
 isZero (Const 0)            = True
 isZero (Var _ 0)            = True
-isZero (Sum 0 vars)         = all (\(x, y) -> y == 0) vars
+isZero (Sum 0 vars)         = all ((==0) . snd) vars
 isZero _                    = False
 
 isNoop (Add _ val)          = isZero val
