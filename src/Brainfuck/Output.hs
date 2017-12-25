@@ -6,7 +6,7 @@ import Data.List
 import Brainfuck
 
 --TODO store the first few offsets in registers
-ptr                         = "%rdi"
+ptr                         = "%rbx"
 reg1                        = "%al"
 reg2                        = "%cl"
 
@@ -34,14 +34,14 @@ mulMem off                  = "mulb " ++ (memOperand off)
 cmpConstMem val off         = "cmpb " ++ (constOperand val) ++ ", " ++ (memOperand off)
 
 call func arg
-    | arg == reg1           = ["call " ++ func]
+    | arg == "%di"          = ["call " ++ func]
     | otherwise             = ["call " ++ func, mov arg reg1]
 
 compileExpression expr      = case expr of
-    Const val               -> ("$" ++ show val, [])
+    Const val               -> (constOperand val, [])
     Var off 1               -> (reg1, [load off reg1])
     Var off mul             -> (reg1, [loadConst mul reg1, mulMem off])
-    Sum val []              -> ("$" ++ show val, [])
+    Sum val []              -> (constOperand val, [])
     Sum 0 _                 -> (reg2, compiledVars)
     Sum _ _                 -> (reg2, start : compiledVars)
     where
