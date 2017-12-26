@@ -2,6 +2,7 @@ module Brainfuck.Output where
 
 import Data.Char
 import Data.List
+import Numeric
 
 import Brainfuck
 
@@ -97,10 +98,15 @@ compileStatement (loops, strings, ops) stmt
         where
             trimmed         = dropWhile isSpace $ dropWhileEnd isSpace str
 
+formatString []             = []
+formatString (x:xs)
+    | x >= ' ' && x <= '~'  = x : formatString xs
+    | otherwise             = '\\' : 'x' : showHex (ord x) (formatString xs)
+
 compileStatements stmts     = stringsHead ++ stringsBody ++ asmHead ++ asmBody ++ asmTail
     where
         stringsHead         = ".section .rodata\n"
-        stringOp (i, str)   = "str" ++ (show i) ++ ":\n\t" ++ ".string " ++ (show str)
+        stringOp (i, str)   = "str" ++ (show i) ++ ":\n\t" ++ ".string \"" ++ (formatString str) ++ "\""
         stringsBody         = intercalate "\n" $ map stringOp $ zip [0..] strings
         asmHead             = "\n\n.text\n" ++
             ".global bfmain\n" ++
