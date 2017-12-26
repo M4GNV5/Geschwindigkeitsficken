@@ -34,34 +34,52 @@ outputs
 puts("Hello World!\n")
 ```
 
-Well duh! But thats kind of boring so lets take a simpler program and disable constant folding:
+Well duh! But thats kind of boring so lets take simpler programs and disable constant folding:
 ```sh
-$ bin/speedfuck -Oconstfold -code '++>++[->++++<]<[->>+++<<]>>++'
+$ bin/speedfuck -Oconstfold -Otrailing -code '+++++>>++<<-' -pseudo
+p[0] += 3
+p[2] += 2
 
-# Nothing? thats because all statements after the last . are removed by -Otrailing
+#Here you can already see one of the most common optimizations applied to
+# brainfuck: grouping +, -, > and <. Note how the statements are reordered so
+# that the last two - can be grouped with the first five + even though there is
+# code in between.
 
-$ bin/speedfuck -Oconstfold -code '++>+++[->++++<]<++[->>+++<<]>>++.'
+$ bin/speedfuck -Oconstfold -Otrailing -code '++++>>++<<-[-]' -pseudo
+p[0] = 0
+p[2] += 2
+
+#Another common optimization is [-] which sets a cell to zero, this also turns
+# all previous changes to p[0] to noops so they are removed.
+
+$ bin/speedfuck -Oconstfold -Otrailing -code '++[->+++<]' -pseudo
+p[0] += 2
+p[1] += p[0] * 3
+p[0] = 0
+
+#the above loop is called a copy loop as it adds three to p[1] and subtracts one
+# from p[0] until p[0] is zero. Thus the loop can be optimized to adding
+# 3 * p[0] to p[1] and setting p[0] to zero. This is called a "copyloop"
+
+$ bin/speedfuck -Oconstfold -Otrailing -code '++[->+++>++<<]' -pseudo
+p[0] += 2
+p[2] += p[0] * 2
+p[1] += p[0] * 3
+p[0] = 0
+
+#copyloops still work with multiple multiplications, in fact the set to zero
+# loop [-] is just a special copyloop with zero multiplications.
+
+$ bin/speedfuck -Oconstfold -code '++>+++[->++++<]<++[->>+++<<]>>++.' -pseudo
 p[0] += 4
 p[1] += 3
 p[2] += p[1] * 4 + p[0] * 3 + 2
 putchar(p[2])
 
-#That looks more like it! as you can see it successfully optimizes the two loops
-# to a single Add statement and it merged the two + at the beginning with the
-# two + before the second loop. Lets see what happens to the latter optimization
-# when we print cell 0 between the two adds
-
-$ bin/speedfuck -Oconstfold -code '++>+++[->++++<]<.++[->>+++<<]>>++.'
-p[0] += 2
-putchar(p[0])
-p[0] += 2
-p[1] += 3
-p[2] += p[1] * 4 + p[0] * 3 + 2
-putchar(p[2])
-
-#As you can see the two Adds are splitted into two divided by a putchar. But
-# more importantly the two loops are completely optimized to a single Add even
-# though the first one was before the putchar(p[0])
+#The above brainfuck code might look complicated at first but in fact it's just
+# two copy loops which both add to p[2]. Note how the p[0] += 4 is combined
+# from the two ++ before and after the first copyloop and how the two copyloops
+# optimize to a single p[2] += ... statement.
 ```
 
 ### Command line options
