@@ -1,4 +1,13 @@
-module Brainfuck where
+module Brainfuck (
+        Expression (..),
+        Statement (..),
+        isLoop,
+        isComment,
+        addExpressions,
+        isZeroShift,
+        parseStatements
+    )
+    where
 
 import Data.Char
 import Data.List
@@ -33,24 +42,31 @@ data Statement
     deriving(Eq)
 
 instance Show Statement where
-    show (Add off val)  = "p[" ++ (show off) ++ "] += " ++ (show val)
-    show (Shift x)      = "p += " ++ (show x)
-    show (Set off val)  = "p[" ++ (show off) ++ "] = " ++ (show val)
-    show (Loop off c)   = "while(p[" ++ (show off) ++ "]) { " ++ (intercalate "; " $ map show c) ++ " }"
-    show (Input off)    = "p[" ++ (show off) ++ "] = getchar()"
-    show (Output val)   = "putchar(" ++ (show val) ++ ")"
-    show (Print str)    = "puts(" ++ (show str) ++ ")"
-    show (Comment str)  = "/*" ++ (dropWhile isSpace $ dropWhileEnd isSpace str) ++ "*/"
+    show (Add off (Const val))      = "p[" ++ (show off) ++ "] " ++ (showConstOp val)
+    show (Add off val)              = "p[" ++ (show off) ++ "] += " ++ (show val)
+    show (Shift val)                = "p " ++ (showConstOp val)
+    show (Set off val)              = "p[" ++ (show off) ++ "] = " ++ (show val)
+    show (Loop off children)        = "while(p[" ++ (show off) ++ "]) { " ++ childrenStr ++ " }"
+        where
+            childrenStr             = intercalate "; " $ map show children
+    show (Input off)                = "p[" ++ (show off) ++ "] = getchar()"
+    show (Output val)               = "putchar(" ++ (show val) ++ ")"
+    show (Print str)                = "puts(" ++ (show str) ++ ")"
+    show (Comment str)              = "/*" ++ (dropWhile isSpace $ dropWhileEnd isSpace str) ++ "*/"
+
+showVar off val         = if val == 1
+    then "p[" ++ (show off) ++ "]"
+    else "p[" ++ (show off) ++ "] * " ++ (show val)
+
+showConstOp val         = if val < 0
+    then "-= " ++ (show (-val))
+    else "+= " ++ (show val)
 
 isLoop (Loop _ _)       = True
 isLoop _                = False
 
 isComment (Comment _)   = True
 isComment _             = False
-
-showVar off val         = if val == 1
-    then "p[" ++ (show off) ++ "]"
-    else "p[" ++ (show off) ++ "] * " ++ (show val)
 
 addExpressions expr1 expr2
     | null vars                     = Const val
@@ -76,21 +92,24 @@ isZeroShift statements              = all isJust vals && valSum == 0
             else Nothing
         getShift _                  = Just 0
 
-parseStatements str     = fst $ parseStatements' str
+parseStatements str         = fst $ parseStatements' str False
 
-parseStatements' []     = ([], [])
-parseStatements' (x:xs)
-    | x == ']'          = ([], xs)
-    | x == '['          = ((Loop 0 rest) : rest', xs'')
-    | otherwise         = (curr : rest, xs')
+parseStatements' [] True    = error "Too many [ or too few ]"
+parseStatements' [] False   = ([], [])
+parseStatements' (x:xs) inner
+    | x == ']' && inner     = ([], xs)
+    | x == ']'              = error "Too many ] or too few ["
+    | x == '['              = ((Loop 0 body) : rest', xs'')
+    | otherwise             = (curr : rest, xs')
     where
-        curr            = case x of
-            '+'         -> Add 0 (Const 1)
-            '-'         -> Add 0 (Const (-1))
-            '>'         -> Shift 1
-            '<'         -> Shift (-1)
-            ','         -> Input 0
-            '.'         -> Output (Var 0 1)
-            _           -> Comment [x]
-        (rest, xs')     = parseStatements' xs
-        (rest', xs'')   = parseStatements' xs'
+        curr                = case x of
+            '+'             -> Add 0 (Const 1)
+            '-'             -> Add 0 (Const (-1))
+            '>'             -> Shift 1
+            '<'             -> Shift (-1)
+            ','             -> Input 0
+            '.'             -> Output (Var 0 1)
+            _               -> Comment [x]
+        (rest, xs')         = parseStatements' xs inner
+        (body, bodyXS)      = parseStatements' xs True
+        (rest', xs'')       = parseStatements' bodyXS inner
