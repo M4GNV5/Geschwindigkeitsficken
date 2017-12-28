@@ -19,8 +19,7 @@ for Speed (Geschwindigkeit) and the colloquial word for having Sex (ficken).
 git clone https://github.com/M4GNV5/Geschwindigkeitsficken.git
 cd Geschwindigkeitsficken
 
-mkdir bin
-ghc -outputdir bin -isrc -o bin/speedfuck -O2 src/main.hs
+make
 ```
 
 ### Examples
