@@ -67,7 +67,7 @@ constantFold' (defVal, values, ops) curr    = case curr of
         Const val                           -> (defVal, setValue off (Just $ fromIntegral val), ops)
         expr'                               -> (defVal, setValue off Nothing, (Set off expr') : ops)
 
-    Shift _                                 -> (Nothing, M.empty, curr : valueOps ++ ops)
+    Shift off                               -> (defVal, M.mapKeys (+off) values, curr : ops)
 
     Loop condition children                 -> if isZeroShift children
         then if offsetIsKnown condition && all offsetIsKnown burntOffsets && (not $ any blocksLoopEval children)
