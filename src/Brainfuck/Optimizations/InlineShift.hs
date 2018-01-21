@@ -13,7 +13,8 @@ inlineShifts' (shift, ops) (Loop off c)     = if isZeroShift c
     where
         (newShift, loopOps)                 = foldl inlineShifts' (shift, []) c
         shiftedLoop                         = Loop (off + shift) $ reverse $ loopOps
-        unshiftedLoop                       = Loop off c
+        (loopShift, unshiftedOps)           = foldl inlineShifts' (0, []) c
+        unshiftedLoop                       = Loop off (reverse $ (Shift loopShift) : unshiftedOps)
 inlineShifts' (shift, ops) op               = (shift, newOp : ops)
     where
         newOp                               = case op of
