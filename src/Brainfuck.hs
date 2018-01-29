@@ -51,7 +51,7 @@ instance Show Statement where
             childrenStr             = intercalate "; " $ map show children
     show (Input off)                = "p[" ++ (show off) ++ "] = getchar()"
     show (Output val)               = "putchar(" ++ (show val) ++ ")"
-    show (Print str)                = "puts(" ++ (show str) ++ ")"
+    show (Print str)                = "print(" ++ (show str) ++ ")"
     show (Comment str)              = "/*" ++ (dropWhile isSpace $ dropWhileEnd isSpace str) ++ "*/"
 
 showVar off val         = if val == 1
