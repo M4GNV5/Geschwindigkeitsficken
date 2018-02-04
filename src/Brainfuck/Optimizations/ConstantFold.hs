@@ -69,16 +69,21 @@ constantFold' (defVal, values, ops) curr    = case curr of
 
     Shift off                               -> (defVal, M.mapKeys (subtract off) values, curr : ops)
 
-    Loop condition children                 -> if isZeroShift children
-        then if offsetIsKnown condition && all offsetIsKnown burntOffsets && (not $ any blocksLoopEval children)
-            then evalLoop (defVal, values, ops)
-            else (defVal, newValues, curr : usedValueOps ++ ops)
-        else (Nothing, M.empty, curr : valueOps ++ ops)
+    Loop condition children
+        | conditionZero                     -> (defVal, values, ops)
+        | canEval                           -> evalLoop (defVal, values, ops)
+        | zeroShift                         -> (defVal, newValues', curr : usedValueOps ++ ops)
+        | otherwise                         -> (Nothing, M.empty, curr : valueOps ++ ops)
         where
+            conditionZero                   = (fromMaybe 1 $ getValue condition) == 0
+            zeroShift                       = isZeroShift children
+            offsetsKnown                    = offsetIsKnown condition && all offsetIsKnown burntOffsets
+            canEval                         = zeroShift && offsetsKnown && (not $ any blocksLoopEval children)
             burntOffsets                    = getChangedOffs 0 children
             burntValues                     = M.restrictKeys values (S.fromList burntOffsets)
             usedValueOps                    = valuesToOps burntValues
             newValues                       = foldl (\m off -> M.insert off Nothing m) values burntOffsets
+            newValues'                      = M.insert condition (Just 0) newValues
             offsetIsKnown off               = definedOldOffset || definedNewOffset
                 where
                     hit                     = M.lookup off values
