@@ -57,6 +57,8 @@ bfflush:
 .global bfputs
 .type bfputs, %function
 bfputs:
+    call bfflush
+
     mov %rax, %rsi
     mov %rcx, %rdx
     mov $1, %edi
