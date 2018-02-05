@@ -29,7 +29,7 @@ optimizations = [
     ]
 
 validOptions = [
-        "i", "o", "code", "pseudo",
+        "i", "o", "code", "pseudo", "keep",
         "Onone", "Ogroup", "Ocopyloop", "Oshifts", "Onoop", "Ogroup2", "Oconstfold", "Otrailing"
     ]
 
@@ -44,8 +44,10 @@ parseOptions (curr:rest)
         hasTextArg          = (not . null) rest && (head $ head rest) /= '-'
         textArg             = head rest
 
-assembleAndLink asm out     = do
-    tmpDir                  <- getTemporaryDirectory
+assembleAndLink asm out keep= do
+    tmpDir                  <- if keep
+        then getCurrentDirectory
+        else getTemporaryDirectory
     (path, fd)              <- openTempFile tmpDir "bf.S"
 
     selfDir                 <- takeDirectory <$> getExecutablePath
@@ -58,12 +60,20 @@ assembleAndLink asm out     = do
     asExit                  <- system $ "as " ++ path ++ " -o " ++ path ++ ".o"
     case asExit of
         ExitSuccess         -> return ()
-        ExitFailure code    -> error $ "as exited with code " ++ (show code)
+        ExitFailure code    -> do
+            if not keep
+                then removeFile path
+                else return ()
+            error $ "as exited with code " ++ (show code)
 
     ldExit                  <- system $ "ld " ++ path ++ ".o " ++ enviroment ++ " -o " ++ out
     case ldExit of
         ExitSuccess         -> return ()
-        ExitFailure code    -> error $ "ld exited with code " ++ (show code)
+        ExitFailure code    -> do
+            if not keep
+                then removeFile path >> removeFile (path ++ ".o")
+                else return ()
+            error $ "ld exited with code " ++ (show code)
 
     return ()
 
@@ -108,8 +118,7 @@ main = do
     let code                = parseStatements input
         optimizations'      = map snd $ filter ((enabledOs!!) . fst) $ zip [0..] optimizations
         optimized           = foldl (flip ($)) code optimizations'
-        labelNames          = map show [0..]
 
     if getSwitch False "pseudo"
         then putStrLn $ intercalate "\n" $ map show optimized
-        else assembleAndLink (compileStatements optimized) (getOption "a.out" "o")
+        else assembleAndLink (compileStatements optimized) (getOption "a.out" "o") (getSwitch False "keep")

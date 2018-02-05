@@ -89,6 +89,7 @@ Either `-i` or `-code` must be given.
 - `-o <file>` specifies the output file (default: `a.out`)
 - `-code <code>` passes code through a command line option rather than reading it from a file
 - `-pseudo` output pseudo C-like code rather than a compiled executable
+- `-keep` keep generated assembly files and put them in the working directory
 
 #### Optimization
 By default all optimizations are enabled and can be disabled using the specific
