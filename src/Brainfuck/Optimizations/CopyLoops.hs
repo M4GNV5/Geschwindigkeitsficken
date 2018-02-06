@@ -1,5 +1,6 @@
 module Brainfuck.Optimizations.CopyLoops (optimizeLoops) where
 
+import Data.Ratio
 import Data.Maybe
 import Data.Foldable
 import qualified Data.Map.Lazy as M
@@ -12,7 +13,7 @@ isBasicOp (Comment _)       = True
 isBasicOp _                 = False
 
 --TODO optimize ifs and infinite loops
---TODO more loop optimizations when there are Set statements inside or condVal is not -1
+--TODO can we optimize when condVal < 0?
 
 analyzeLoop (shift, condOp, mathOps) (Add off (Const val))
     | shift == 0 && off == 0                    = (shift, condOp + val, mathOps)
@@ -26,7 +27,7 @@ analyzeLoop (shift, condOp, mathOps) (Add off (Const val))
 analyzeLoop (shift, condOp, mathOps) (Shift x)  = (shift + x, condOp, mathOps)
 analyzeLoop state (Comment _)                   = state
 
-optimizeLoop loop@(Loop off children)           = if hasNonBasicOps || totalShift /= 0 || condVal /= (-1)
+optimizeLoop loop@(Loop off children)           = if hasNonBasicOps || totalShift /= 0 || condVal >= 0
     then [Loop off children']
     else comments ++ optimizedChildren ++ [(Set off (Const 0))]
     where
@@ -34,7 +35,9 @@ optimizeLoop loop@(Loop off children)           = if hasNonBasicOps || totalShif
         comments                                = filter isComment children
         hasNonBasicOps                          = any (not . isBasicOp) children'
         (totalShift, condVal, mathOps)          = foldl analyzeLoop (0, 0, M.empty) children
-        optimizedChildren                       = map (\(curr, val) -> Add curr (Var off val)) $ M.toList mathOps
+        optimizedChildren                       = map genMathOp $ M.toList mathOps
+        condVal'                                = negate condVal
+        genMathOp (curr, val)                   = Add curr (Var off (val % condVal'))
 
 optimizeLoops statements                        = concat $ map optimizeIfLoop statements
     where

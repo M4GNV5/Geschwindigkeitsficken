@@ -12,11 +12,14 @@ module Brainfuck (
 import Data.Char
 import Data.List
 import Data.Maybe
+import Data.Ratio
+
+type IntRatio = Ratio Int
 
 data Expression
-    = Const Int             --arg0
-    | Var Int Int           --p[arg0] * arg1
-    | Sum Int [(Int, Int)]  --arg0 + p[arg1[0].0] * arg1[0].1 + p[arg1[1].0] * arg1[1].1 + ...
+    = Const Int                 --arg0
+    | Var Int IntRatio          --p[arg0] * arg1
+    | Sum Int [(Int, IntRatio)] --arg0 + p[arg1[0].0] * arg1[0].1 + p[arg1[1].0] * arg1[1].1 + ...
     deriving(Eq)
 
 instance Show Expression where
@@ -54,9 +57,14 @@ instance Show Statement where
     show (Print str)                = "print(" ++ (show str) ++ ")"
     show (Comment str)              = "/*" ++ (dropWhile isSpace $ dropWhileEnd isSpace str) ++ "*/"
 
-showVar off val         = if val == 1
-    then "p[" ++ (show off) ++ "]"
-    else "p[" ++ (show off) ++ "] * " ++ (show val)
+showVar off val
+    | val == 1                      = "p[" ++ (show off) ++ "]"
+    | denom == 1                    = "p[" ++ (show off) ++ "] * " ++ (show numer)
+    | numer == 1                    = "p[" ++ (show off) ++ "] / " ++ (show denom)
+    | otherwise                     = "p[" ++ (show off) ++ "] * " ++ (show numer) ++ " / " ++ (show denom)
+    where
+        numer                       = numerator val
+        denom                       = denominator val
 
 showConstOp val         = if val < 0
     then "-= " ++ (show (-val))

@@ -36,7 +36,7 @@ valuesToOps values                  = valueOps
 evaluateExpr defVal values expr     = case expr of
     Const _                         -> expr
     Var off mul                     -> case getValue off of
-        Just val                    -> Const $ fromIntegral $ (fromIntegral mul) * (fromIntegral val)
+        Just val                    -> Const $ truncate $ mul * (fromIntegral val)
         Nothing                     -> expr
     Sum val vars                    -> evaluateSum val vars
     where
@@ -47,8 +47,8 @@ evaluateExpr defVal values expr     = case expr of
             | otherwise             = Sum valSum nonConstVars
             where
                 getVar off mul      = case getValue off of
-                    Just val        -> Left $ (fromIntegral mul) * (fromIntegral val)
-                    Nothing         -> Right (off, fromIntegral mul)
+                    Just val        -> Left $ truncate $ mul * (fromIntegral val)
+                    Nothing         -> Right (off, mul)
                 varVals             = map (uncurry getVar) vars
                 valSum              = (fromIntegral val) + (sum $ lefts varVals)
                 nonConstVars        = rights varVals

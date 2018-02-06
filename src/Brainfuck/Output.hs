@@ -1,6 +1,7 @@
 module Brainfuck.Output where
 
 import Data.Char
+import Data.Ratio
 import Data.List
 import Numeric
 
@@ -10,6 +11,7 @@ import Brainfuck
 ptr                         = "%rbx"
 reg1                        = "%al"
 reg2                        = "%cl"
+reg3                        = "%ch"
 
 constOperand val            = "$" ++ show val
 memOperand 0                = "(" ++ ptr ++ ")"
@@ -32,6 +34,9 @@ addRegMem reg off           = "add " ++ reg ++ ", " ++ (memOperand off)
 
 mulMem off                  = "mulb " ++ (memOperand off)
 
+load16Z off reg             = "movzx " ++ (memOperand off) ++ ", " ++ reg
+divReg reg                  = "divb " ++ reg
+
 cmpConstMem val off         = "cmpb " ++ (constOperand val) ++ ", " ++ (memOperand off)
 
 call func arg
@@ -41,15 +46,22 @@ call func arg
 compileExpression expr      = case expr of
     Const val               -> (constOperand val, [])
     Var off 1               -> (reg1, [load off reg1])
-    Var off mul             -> (reg1, [loadConst mul reg1, mulMem off])
+    Var off mul             -> (reg1, init $ compileVar off mul)
     Sum val []              -> (constOperand val, [])
-    Sum 0 _                 -> (reg2, compiledVars)
     Sum _ _                 -> (reg2, start : compiledVars)
     where
         Sum val vars        = expr
         start               = loadConst val reg2
         compileVar off 1    = [addMemReg off reg2]
-        compileVar off mul  = [loadConst mul reg1, mulMem off, add reg1 reg2]
+        compileVar off mul
+            | mul == 0      = []
+            | mul == 1      = [addMemReg off reg2]
+            | denom == 1    = [loadConst numer reg1, mulMem off, add reg1 reg2]
+            | numer == 1    = [load16Z off "%ax", loadConst denom reg3, divReg reg3, add reg1 reg2]
+            | otherwise     = [loadConst numer reg1, mulMem off, loadConst denom reg3, divReg reg3, add reg1 reg2]
+            where
+                numer       = numerator mul
+                denom       = denominator mul
         compiledVars        = concat $ map (uncurry compileVar) vars
 
 addExprMem off expr         = case expr of
