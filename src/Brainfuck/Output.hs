@@ -7,8 +7,6 @@ import Data.List
 import Data.Ord
 import Numeric
 
-import Debug.Trace
-
 import Brainfuck
 
 ptr                         = "%rbx"
@@ -146,7 +144,7 @@ compileStatement (loops, strings, ops, regMap) (stmt:rest)
         state'                      = case stmt of
             Add off val             -> (loops, strings, addExprMem regMap off val ++ ops, regMap)
             Set off val             -> (loops, strings, setExprMem regMap off val ++ ops, regMap)
-            Shift off               -> (loops, strings, addConst off ptr : loadOps ++ storeOps ++ ops, regMap')
+            Shift shift             -> (loops, strings, addConst shift ptr : loadOps ++ storeOps ++ ops, regMap')
             Input off               -> (loops, strings, store regMap reg1 off : "call bfgetchar" : ops, regMap)
             Output val              -> (loops, strings, outputExpr regMap val ++ ops, regMap)
 
@@ -157,16 +155,16 @@ compileStatement (loops, strings, ops, regMap) (stmt:rest)
                     loopName        = "loop" ++ (show loops)
                     loopHeadOps     = ["je " ++ loopName ++ "end", cmpConstMem regMap 0 off, loopName ++ ":"]
                     loopTailOps     = [loopName ++ "end:", "jmp " ++ loopName]
-                    regBlocker      = regBlock stmt
+                    regBlocker      = any regBlock children
                     childRegMap     = if regBlocker
                         then regAlloc children
                         else regMap
                     (storeOps, loadChildOps)            = regMapSwap regMap childRegMap
                     (innerStore, loadChildOps')         = regMapSwap innerMap childRegMap
-                    (storeChildOps, loadOps)            = regMapSwap childRegMap regMap'
+                    (_, loadOps)                        = regMapSwap [] regMap'
                     (loops', strings', ops', innerMap)  = compileStatement (loops + 1, strings, [], childRegMap) children
                     loopOpsWithSwap = loopTailOps ++ loadChildOps' ++ innerStore ++ ops' ++ loopHeadOps
-                    opsWithSwap     = loadOps ++ storeChildOps ++ loopOpsWithSwap ++ loadChildOps ++ storeOps ++ ops
+                    opsWithSwap     = loadOps ++ loopOpsWithSwap ++ loadChildOps ++ storeOps ++ ops
                     opsWithoutSwap  = loopTailOps ++ ops' ++ loopHeadOps ++ ops
 
             Print str               -> (loops, str : strings, callOp : arg1Op : arg0Op : ops, regAlloc rest)
@@ -196,6 +194,6 @@ compileStatements stmts     = stringsHead ++ stringsBody ++ asmHead ++ asmBody +
         asmTail             = "\n\tret"
         asmBody             = intercalate "\n\t" $ reverse ops'
         regMap              = regAlloc stmts
-        loadOps             = map (loadZero . (usableRegs !!)) regMap
+        loadOps             = map (loadZero . (usableRegs !!)) $ take (length regMap) [0..]
         (_, strings, ops, _)= compileStatement (0, [], [], regMap) stmts
         ops'                = ops ++ loadOps
