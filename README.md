@@ -13,6 +13,25 @@ writing an optimizing brainfuck compiler calling it "Speedfuck" - a translator
 bot automatically translated it to "Geschwindigkeitsficken" from the german word
 for Speed (Geschwindigkeit) and the colloquial word for having Sex (ficken).
 
+### Speed
+
+![](https://i.m4gnus.de/speedspeedspeed.png)
+
+The graph shows the runtime of [Mandelbrot](examples/mandelbrot.bf)
+compiled using different Brainfuck compilers. All compilers which output C code
+appear twice, compiling the generated code with `gcc -O0` vs `gcc -O2`. Speedfuck
+is faster than all compilers which do not generate C code but except for bfdb executables
+optimized by `gcc` are faster than speedfuck.
+
+Here is a list of the compilers in the graph above:
+- [esotope](https://github.com/lifthrasiir/esotope-bfc) 2009 by Kang Seonghoon
+- [bfoptimization](https://github.com/matslina/bfoptimization) 2015 by Mats Linander
+- [bf2c.hs](http://esoteric.sange.fi/brainfuck/impl/compilers/bf2c.hs) 2002 by Bertram Felgenhauer
+- [speedfuck](https://github.com/M4GNV5/Geschwindigkeitsficken) 2018 by Jakob Löw
+- [yabfc](https://github.com/cameronswinoga/yabfc) 2017 by Cameron Swinoga
+- [bfc](https://github.com/Wilfred/bfc) 2017 by Wilfred Hughes
+- [bfdb](http://djm.cc/dmoews.html) 2006 by David Moews
+
 ### Compiling
 
 ```sh
