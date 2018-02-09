@@ -14,8 +14,11 @@ reg1                        = "%al"
 reg2                        = "%cl"
 reg3                        = "%ch"
 
---TODO %dl, %dh, %dil, %sil and %r11b are usable too but clobbered when calling bfputs, bfputchar or bfgetchar
-usableRegs                  = ["%r8b", "%r9b", "%r10b", "%r12b", "%r13b", "%r14b", "%r15b"]
+--TODO use %r11b too? Then it would need to be stored in environment.S
+usableRegs                  = [
+                                "%dl", "%dh", "%dil", "%sil",
+                                "%r8b", "%r9b", "%r10b", "%r12b", "%r13b", "%r14b", "%r15b"
+                            ]
 
 constOperand val            = "$" ++ show val
 memOperand regMap off

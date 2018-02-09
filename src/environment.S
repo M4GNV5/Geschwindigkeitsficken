@@ -1,3 +1,14 @@
+/*
+Speedfuck custom ABI:
+argument1 in %rax
+argument2 in %rcx
+return value in %rax
+
+scratch registers: %rax, %rcx, %r11
+%rbx contains the brainfuck pointer
+callee saved: all others
+*/
+
 .data
 
 writepos:
@@ -7,9 +18,25 @@ writepos:
     .comm writebuff, 1024
     .comm readbuff, 2
 
+.macro store_regs
+    sub $8, %rsp
+    mov %dx, (%rsp)
+    mov %dil, 2(%rsp)
+    mov %sil, 3(%rsp)
+.endm
+
+.macro restore_regs
+    mov (%rsp), %dx
+    mov 2(%rsp), %dil
+    mov 3(%rsp), %sil
+    add $8, %rsp
+.endm
+
 .global bfgetchar
 .type bfgetchar, %function
 bfgetchar:
+    store_regs
+
     call bfflush
 
     mov $0, %eax
@@ -19,21 +46,30 @@ bfgetchar:
     syscall
 
     mov readbuff, %al
+
+    restore_regs
     ret
 
 .global bfputchar
 .type bfputchar, %function
 bfputchar:
-    mov writepos, %rdx
-    mov %al, writebuff(%rdx)
-    inc %rdx
+    mov writepos, %rcx
+    mov %al, writebuff(%rcx)
+    inc %rcx
 
     cmp $'\n', %al
-    je flushWritebuff
-    cmp $1024, %rdx
-    jae flushWritebuff
+    je storeAndFlush
+    cmp $1024, %rcx
+    jae storeAndFlush
 
-    mov %rdx, writepos
+    mov %rcx, writepos
+    ret
+
+storeAndFlush:
+    store_regs
+    mov %rcx, %rdx
+    call flushWritebuff
+    restore_regs
     ret
 
 flushWritebuff:
@@ -57,6 +93,8 @@ bfflush:
 .global bfputs
 .type bfputs, %function
 bfputs:
+    store_regs
+
     call bfflush
 
     mov %rax, %rsi
@@ -65,6 +103,7 @@ bfputs:
     mov $1, %eax
     syscall
 
+    restore_regs
     ret
 
 .global bfhandlesegv
