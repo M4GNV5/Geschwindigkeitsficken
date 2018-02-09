@@ -153,7 +153,7 @@ compileStatement (loops, strings, ops, regMap) (stmt:rest)
                 | otherwise         -> (loops', strings', opsWithoutSwap, regMap)
                 where
                     loopName        = "loop" ++ (show loops)
-                    loopHeadOps     = ["je " ++ loopName ++ "end", cmpConstMem regMap 0 off, loopName ++ ":"]
+                    loopHeadOps     = ["je " ++ loopName ++ "end", cmpConstMem childRegMap 0 off, loopName ++ ":"]
                     loopTailOps     = [loopName ++ "end:", "jmp " ++ loopName]
                     regBlocker      = any regBlock children
                     childRegMap     = if regBlocker
