@@ -45,8 +45,11 @@ bfgetchar:
     mov $1, %edx
     syscall
 
+    cmp $0, %rax
+    je gotEof
     mov readbuff, %al
 
+gotEof:
     restore_regs
     ret
 
