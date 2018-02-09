@@ -100,24 +100,6 @@ regBlock (Shift _)          = True
 regBlock (Loop _ children)  = any regBlock children
 regBlock _                  = False
 
-usedOffsets stmt            = case stmt of
-    Add off expr            -> ([off], exprUsedOffsets expr)
-    Set off expr            -> ([off], exprUsedOffsets expr)
-    Input off               -> ([off], [])
-    Output expr             -> ([], exprUsedOffsets expr)
-    Print _                 -> ([], [])
-    Loop off children       -> (childSet, off : childUsed)
-        where
-            result          = map usedOffsets children
-            childSet        = (concat . map fst) result
-            childUsed       = (concat . map snd) result
-    Comment _               -> ([], [])
-    where
-        exprUsedOffsets expr= case expr of
-            Const _         -> []
-            Var off _       -> [off]
-            Sum _ vars      -> map fst vars
-
 frequency list              = map (\l -> (length l, head l)) (group (sort list))
 
 regAlloc ops                = if length opsToBlocker < 3

@@ -5,6 +5,7 @@ module Brainfuck (
         isComment,
         addExpressions,
         isZeroShift,
+        usedOffsets,
         parseStatements
     )
     where
@@ -99,6 +100,25 @@ isZeroShift statements              = all isJust vals && valSum == 0
             then Just 0
             else Nothing
         getShift _                  = Just 0
+
+usedOffsets stmt            = case stmt of
+    Add off expr            -> ([off], exprUsedOffsets expr)
+    Set off expr            -> ([off], exprUsedOffsets expr)
+    Shift _                 -> ([], [])
+    Input off               -> ([off], [])
+    Output expr             -> ([], exprUsedOffsets expr)
+    Print _                 -> ([], [])
+    Loop off children       -> (childSet, off : childUsed)
+        where
+            result          = map usedOffsets children
+            childSet        = (concat . map fst) result
+            childUsed       = (concat . map snd) result
+    Comment _               -> ([], [])
+    where
+        exprUsedOffsets expr= case expr of
+            Const _         -> []
+            Var off _       -> [off]
+            Sum _ vars      -> map fst vars
 
 parseStatements str         = fst $ parseStatements' str False
 

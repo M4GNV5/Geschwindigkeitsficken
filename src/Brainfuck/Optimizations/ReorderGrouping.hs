@@ -7,47 +7,18 @@ import qualified Data.Sequence as S
 
 import Brainfuck
 
-getExprSources expr                 = case expr of
-    Const _                         -> []
-    Var off _                       -> [off]
-    Sum _ vars                      -> map fst vars
-
-getSources stmt                     = case stmt of
-    Add _ expr                      -> getExprSources expr
-    Set _ expr                      -> getExprSources expr
-    Output expr                     -> getExprSources expr
-    Loop off children               -> off : (concat $ map getSources children)
-    _                               -> []
-
-assignsTo off1 stmt                 = case stmt of
-    Set off2 _                      -> off1 == off2
-    Input off2                      -> off1 == off2
-    Loop _ children                 -> any (assignsTo off1) children
-    _                               -> False
-
-addsTo off1 stmt                    = case stmt of
-    Add off2 _                      -> off1 == off2
-    Loop _ children                 -> any (addsTo off1) children
-    _                               -> False
-
-changes off1 stmt                   = case stmt of
-    Add off2 _                      -> off1 == off2
-    Set off2 _                      -> off1 == off2
-    Input off2                      -> off1 == off2
-    Loop _ children                 -> any (changes off1) children
-    _                               -> False
-
-isShift stmt                        = case stmt of
+shifts stmt                         = case stmt of
     Shift _                         -> True
     Loop _ children                 -> (not . isZeroShift) children
     _                               -> False
 
-isBlocker off sources stmt          = usesOff || changesOff || changesSource || shifts
+isBlocker off sources stmt          = usesOff || changesOff || changesSource || nonZeroShift
     where
-        usesOff                     = off `elem` (getSources stmt)
-        changesOff                  = changes off stmt
-        changesSource               = any (flip changes stmt) sources
-        shifts                      = isShift stmt
+        (setOffs, getOffs)          = usedOffsets stmt
+        usesOff                     = off `elem` getOffs
+        changesOff                  = off `elem` setOffs
+        changesSource               = any (`elem`setOffs) sources
+        nonZeroShift                = shifts stmt
 
 reorderAndGroup' ops curr
     | isZeroShiftLoop               = (Loop loopOff $ reorderAndGroup children) S.<| ops
@@ -64,12 +35,15 @@ reorderAndGroup' ops curr
             Set off _               -> Just off
             _                       -> Nothing
         off'                        = fromJust off
-        sources                     = getSources curr
+        (_, sources)                = usedOffsets curr
         nextUse                     = S.findIndexL (isBlocker off' sources) ops
         nextUse'                    = fromJust nextUse
         nextUseOp                   = S.index ops nextUse'
-        canDrop                     = (not . isLoop) nextUseOp && assignsTo off' nextUseOp
-        canGroup                    = (not . isLoop) nextUseOp && addsTo off' nextUseOp
+        (canDrop, canGroup)         = case nextUseOp of
+            Add offN _              -> (False, off' == offN)
+            Set offN _              -> (off' == offN, False)
+            Input offN              -> (off' == offN, False)
+            _                       -> (False, False)
         Add _ nextUseVal            = nextUseOp
         grouped                     = case curr of
             Set _ val               -> Set off' $ addExpressions val nextUseVal
