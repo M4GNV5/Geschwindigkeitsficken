@@ -15,13 +15,14 @@ for Speed (Geschwindigkeit) and the colloquial word for having Sex (ficken).
 
 ### Speed
 
-![](https://i.m4gnus.de/speedspeedspeed.png)
+![](https://i.m4gnus.de/brainfuckcompilers1.png)
 
 The graph shows the runtime of [Mandelbrot](examples/mandelbrot.bf)
 compiled using different Brainfuck compilers. All compilers which output C code
 appear twice, compiling the generated code with `gcc -O0` vs `gcc -O2`. Speedfuck
-is faster than all compilers which do not generate C code but except for bfdb executables
-optimized by `gcc` are faster than speedfuck.
+appears three times: Compiling generated C code with `-O0`, with `-O2` and
+generating assembly code directly. The script for measuring execution speed and plotting
+can be found [here](https://gist.github.com/M4GNV5/dbad0a612349d65b9f7140199de270d1).
 
 Here is a list of the compilers in the graph above:
 - [esotope](https://github.com/lifthrasiir/esotope-bfc) 2009 by Kang Seonghoon
@@ -45,7 +46,8 @@ make
 
 Compiling the popular Hello World! program
 ```b
-++++++++++[>+++++++>++++++++++>+++>+<<<<-]>++.>+.+++++++..+++.>++.<<+++++++++++++++.>.+++.------.--------.>+.>.
+++++++++++[>+++++++>++++++++++>+++>+<<<<-]
+>++.>+.+++++++..+++.>++.<<+++++++++++++++.>.+++.------.--------.>+.>.
 ```
 outputs
 ```sh
@@ -54,7 +56,7 @@ puts("Hello World!\n")
 
 Well duh! But thats kind of boring so lets take simpler programs and disable constant folding:
 ```sh
-$ bin/speedfuck -Oconstfold -Otrailing -code '+++++>>++<<-' -pseudo
+$ bin/speedfuck -Oconstfold -Otrailing -code '+++++>>++<<--'
 p[0] += 3
 p[2] += 2
 
@@ -63,32 +65,32 @@ p[2] += 2
 # that the last two - can be grouped with the first five + even though there is
 # code in between.
 
-$ bin/speedfuck -Oconstfold -Otrailing -code '++++>>++<<-[-]' -pseudo
+$ bin/speedfuck -Oconstfold -Otrailing -code '++++>>++<<-[-]'
 p[0] = 0
 p[2] += 2
 
 #Another common optimization is [-] which sets a cell to zero, this also turns
 # all previous changes to p[0] to noops so they are removed.
 
-$ bin/speedfuck -Oconstfold -Otrailing -code '++[->+++<]' -pseudo
+$ bin/speedfuck -Oconstfold -Otrailing -code '++[->+++<]'
 p[0] += 2
 p[1] += p[0] * 3
 p[0] = 0
 
 #the above loop is called a copy loop as it adds three to p[1] and subtracts one
 # from p[0] until p[0] is zero. Thus the loop can be optimized to adding
-# 3 * p[0] to p[1] and setting p[0] to zero. This is called a "copyloop"
+# 3 * p[0] to p[1] and setting p[0] to zero.
 
-$ bin/speedfuck -Oconstfold -Otrailing -code '++[->+++>++<<]' -pseudo
+$ bin/speedfuck -Oconstfold -Otrailing -code '++[-->+++>++++<<]'
 p[0] += 2
 p[2] += p[0] * 2
-p[1] += p[0] * 3
+p[1] += p[0] * 3 / 2
 p[0] = 0
 
 #copyloops still work with multiple multiplications, in fact the set to zero
-# loop [-] is just a special copyloop with zero multiplications.
+# loop [-] is just a special copyloop without multiplications.
 
-$ bin/speedfuck -Oconstfold -code '++>+++[->++++<]<++[->>+++<<]>>++.' -pseudo
+$ bin/speedfuck -Oconstfold -code '++>+++[->++++<]<++[->>+++<<]>>++.'
 p[0] += 4
 p[1] += 3
 p[2] += p[1] * 4 + p[0] * 3 + 2
@@ -105,10 +107,10 @@ putchar(p[2])
 #### Generic
 Either `-i` or `-code` must be given.
 - `-i <file>` specifies an input file
-- `-o <file>` specifies the output file (default: `a.out`)
+- `-o <file>` specifies the output file (default: `a.out`). If the output file ends
+with `.c` C code will be outputted, `.S` makes it output amd64 assembly and `.dump` will
+write the internal instruction layout. Everything else produces a native executable.
 - `-code <code>` passes code through a command line option rather than reading it from a file
-- `-pseudo` output pseudo C-like code rather than a compiled executable
-- `-keep` keep generated assembly files and put them in the working directory
 
 #### Optimization
 By default all optimizations are enabled and can be disabled using the specific
@@ -121,5 +123,5 @@ specific ones using the corresponding `-O` switch.
 - `-Oshifts` optimize `++>++` to `p[0] += 2; p[1] += 2;`
 - `-Onoop` removes noops (e.g. `++--`)
 - `-Ogroup2` reorders and groups statements. e.g. `++>++<++` turns into `p[0] += 4; p[1] += 2`
-- `-Oconstfold` evaluate the program as much as possible. This turns programs without `,` into single `puts` statements
+- `-Oconstfold` evaluate the program as much as possible
 - `-Otrailing` remove all instructions after the last `,` or `.`
