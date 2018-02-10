@@ -8,7 +8,8 @@ import System.Directory
 import System.Environment
 
 import Brainfuck
-import Brainfuck.Output
+import qualified Brainfuck.Output.Amd64Assembly as ASM
+import qualified Brainfuck.Output.C as C
 import Brainfuck.Optimizations.Grouping
 import Brainfuck.Optimizations.CopyLoops
 import Brainfuck.Optimizations.InlineShift
@@ -28,8 +29,15 @@ optimizations = [
         removeTrailing
     ]
 
+compilers :: [(String, [Statement] -> String)]
+compilers = [
+        (".dump", intercalate "\n" . map show),
+        (".S", ASM.compileStatements),
+        (".c", C.compileStatements)
+    ]
+
 validOptions = [
-        "i", "o", "code", "pseudo", "keep",
+        "i", "o", "code",
         "Onone", "Ogroup", "Ocopyloop", "Oshifts", "Onoop", "Ogroup2", "Oconstfold", "Otrailing"
     ]
 
@@ -44,10 +52,8 @@ parseOptions (curr:rest)
         hasTextArg          = (not . null) rest && (head $ head rest) /= '-'
         textArg             = head rest
 
-assembleAndLink asm out keep= do
-    tmpDir                  <- if keep
-        then getCurrentDirectory
-        else getTemporaryDirectory
+assembleAndLink asm out     = do
+    tmpDir                  <- getTemporaryDirectory
     (path, fd)              <- openTempFile tmpDir "bf.S"
 
     selfDir                 <- takeDirectory <$> getExecutablePath
@@ -61,18 +67,15 @@ assembleAndLink asm out keep= do
     case asExit of
         ExitSuccess         -> return ()
         ExitFailure code    -> do
-            if not keep
-                then removeFile path
-                else return ()
+            removeFile path
             error $ "as exited with code " ++ (show code)
 
     ldExit                  <- system $ "ld " ++ path ++ ".o " ++ enviroment ++ " -o " ++ out
     case ldExit of
         ExitSuccess         -> return ()
         ExitFailure code    -> do
-            if not keep
-                then removeFile path >> removeFile (path ++ ".o")
-                else return ()
+            removeFile path
+            removeFile (path ++ ".o")
             error $ "ld exited with code " ++ (show code)
 
     return ()
@@ -118,7 +121,8 @@ main = do
     let code                = parseStatements input
         optimizations'      = map snd $ filter ((enabledOs!!) . fst) $ zip [0..] optimizations
         optimized           = foldl (flip ($)) code optimizations'
+        outFile             = getOption "a.out" "o"
 
-    if getSwitch False "pseudo"
-        then putStrLn $ intercalate "\n" $ map show optimized
-        else assembleAndLink (compileStatements optimized) (getOption "a.out" "o") (getSwitch False "keep")
+    case lookup (takeExtension outFile) compilers of
+        Just compiler       -> writeFile outFile (compiler optimized)
+        Nothing             -> assembleAndLink (ASM.compileStatements optimized) outFile
