@@ -1,4 +1,4 @@
-module Brainfuck.Output.Amd64Assembly (compileStatements) where
+module Brainfuck.Output.X64Assembly (compileStatements) where
 
 import Data.Maybe
 import Data.Char

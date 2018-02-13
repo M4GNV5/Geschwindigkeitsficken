@@ -8,7 +8,7 @@ import System.Directory
 import System.Environment
 
 import Brainfuck
-import qualified Brainfuck.Output.Amd64Assembly as ASM
+import qualified Brainfuck.Output.X64Assembly as ASM
 import qualified Brainfuck.Output.C as C
 import Brainfuck.Optimizations.Grouping
 import Brainfuck.Optimizations.CopyLoops
