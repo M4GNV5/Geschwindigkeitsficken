@@ -8,7 +8,10 @@ post about it. There is also a list of similar projects [on this page](https://g
 
 ### Name
 
-The name originated in a skype chat many years ago. [@Webfreak001](https://github.com/WebFreak001) had the idea of
+![Screenshot](https://pbs.twimg.com/media/CJaG8fkVEAAZ7Az.png:large)
+
+The name originated [in a skype chat](https://twitter.com/M46NV5/status/618830373842198528)
+many years ago. [@Webfreak001](https://github.com/WebFreak001) had the idea of
 writing an optimizing brainfuck compiler calling it "Speedfuck" - a translator
 bot automatically translated it to "Geschwindigkeitsficken" from the german word
 for Speed (Geschwindigkeit) and the colloquial word for having Sex (ficken).
