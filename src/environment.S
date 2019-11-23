@@ -140,12 +140,24 @@ bfhandlesegv:
     mov $9, %eax
     mov 0x10(%rsi), %rdi
     and $~4095, %rdi
+    push %rdi
     mov $4096, %esi
     mov $3, %edx /*PROT_READ | PROT_WRITE*/
     mov $34, %r10d /*MAP_ANONYMOUS | MAP_PRIVATE*/
     mov $-1, %r8d
     mov $0, %r9d
     syscall
+
+    pop %rax
+    mov %rax, %rcx
+    add $4096, %rcx
+    xorps %xmm0, %xmm0
+
+zeroMem:
+    movaps %xmm0, (%rax)
+    add $16, %rax
+    cmp %rax, %rcx
+    jb zeroMem
 
     add $8, %rsp
 
@@ -159,8 +171,8 @@ bfhandlesegv:
 _start:
     sub $32, %rsp
     xorps %xmm0, %xmm0 /*zero the sigaction struct*/
-    movups %xmm0, (%rsp)
-    movups %xmm0, 0x10(%rsp)
+    movaps %xmm0, (%rsp)
+    movaps %xmm0, 0x10(%rsp)
     movq $bfhandlesegv, (%rsp) /*sa_sigaction = bfhandlesegv*/
     movl $0x4000004, 0x8(%rsp) /*sa_flags = SA_SIGINFO | SA_RESTORER*/
 
