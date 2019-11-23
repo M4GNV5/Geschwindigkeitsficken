@@ -69,6 +69,14 @@ constantFold' (defVal, values, ops) curr    = case curr of
 
     Shift off                               -> (defVal, M.mapKeys (subtract off) values, curr : ops)
 
+    AddUntilZero off val                    -> (defVal, setValue off result, ops)
+        where
+            val8                            = fromIntegral $ negate val
+            result                          = fmap countAddsUntilZero $ getValue off
+            countAddsUntilZero condVal      = if (rem condVal val8) == 0
+                then div condVal val8
+                else 1 + (div condVal val8) + countAddsUntilZero ((rem condVal val8) - val8)
+
     Loop condition children
         | conditionZero                     -> (defVal, values, ops)
         | canEval                           -> evalLoop (defVal, values, ops)

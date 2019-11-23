@@ -20,6 +20,7 @@ inlineShifts' (shift, ops) op               = (shift, newOp : ops)
         newOp                               = case op of
             Add off val                     -> Add (off + shift) $ shiftExpression shift val
             Set off val                     -> Set (off + shift) $ shiftExpression shift val
+            AddUntilZero off val            -> AddUntilZero (off + shift) val
             Input off                       -> Input (off + shift)
             Output val                      -> Output $ shiftExpression shift val
             _                               -> op

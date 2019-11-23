@@ -27,6 +27,7 @@ data Statement
     = Add Int Expression    -- p[arg0] += arg1
     | Set Int Expression    -- p[arg0] = arg1
     | Shift Int             -- p += arg
+    | AddUntilZero Int Int  -- p[arg0] = add arg1 to arg0 until arg0 reaches zero (with byte overflows)
     | Loop Int [Statement]  -- while(p[arg0]) { arg1 }
     | Input Int             -- p[arg0] = getchar()
     | Output Expression     -- putchar(p[arg0])
@@ -68,6 +69,7 @@ usedOffsets stmt            = case stmt of
     Add off expr            -> ([off], exprUsedOffsets expr)
     Set off expr            -> ([off], exprUsedOffsets expr)
     Shift _                 -> ([], [])
+    AddUntilZero off _      -> ([off], [])
     Input off               -> ([off], [])
     Output expr             -> ([], exprUsedOffsets expr)
     Print _                 -> ([], [])

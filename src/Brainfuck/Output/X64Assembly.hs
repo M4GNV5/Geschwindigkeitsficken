@@ -133,6 +133,13 @@ compileStatement (loops, strings, ops, regMap) (stmt:rest)
             Input off               -> (loops, strings, store regMap reg1 off : "call bfgetchar" : ops, regMap)
             Output val              -> (loops, strings, outputExpr regMap val ++ ops, regMap)
 
+            AddUntilZero off val    -> (loops, strings, ops', regMap)
+                where
+                    loadReg1        = load regMap off reg1
+                    loadReg2        = loadConst (negate val) reg2
+                    storeReg1       = store regMap reg1 off
+                    ops'            = storeReg1 : "call bfadduntilzero" : loadReg2 : loadReg1 : ops
+
             Loop off children
                 | regBlocker        -> (loops', strings', opsWithSwap, regMap')
                 | otherwise         -> (loops', strings', opsWithoutSwap, regMap)

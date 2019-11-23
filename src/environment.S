@@ -32,6 +32,30 @@ writepos:
     add $8, %rsp
 .endm
 
+.global bfadduntilzero
+.type bfadduntilzero, %function
+bfadduntilzero:
+    /* incoming val in %al, addVal in %cl */
+    /* storing the sum in %r11b */
+    xor %r11b, %r11b
+addLoop:
+    /* calculate p[off] / val and p[off] % val and add the result */
+    xor %ah, %ah
+    div %cl
+    add %al, %r11b
+
+    /* do the wrap around, which also counts as an add */
+    mov %ah, %al
+    sub %cl, %al
+    inc %r11b
+
+    test %ah, %ah
+    jne addLoop
+
+    mov %r11b, %al
+    dec %al
+    ret
+
 .global bfgetchar
 .type bfgetchar, %function
 bfgetchar:
