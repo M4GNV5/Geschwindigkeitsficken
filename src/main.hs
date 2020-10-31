@@ -10,6 +10,7 @@ import System.Environment
 import Brainfuck
 import qualified Brainfuck.Output.X64Assembly as ASM
 import qualified Brainfuck.Output.C as C
+import qualified Brainfuck.Output.JSON as JSON
 import Brainfuck.Output.Dump
 import Brainfuck.Optimizations.Grouping
 import Brainfuck.Optimizations.CopyLoops
@@ -33,6 +34,7 @@ optimizations = [
 compilers :: [(String, [Statement] -> String)]
 compilers = [
         (".dump", dumpStatements),
+        (".json", JSON.dumpStatements),
         (".S", ASM.compileStatements),
         (".c", C.compileStatements)
     ]
