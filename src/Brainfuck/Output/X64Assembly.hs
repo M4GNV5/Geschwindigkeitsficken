@@ -165,9 +165,7 @@ compileStatement (loops, strings, ops, regMap) (stmt:rest)
                     arg0Op          = mov ("$str" ++ (show $ length strings)) "%rax"
                     arg1Op          = mov (constOperand $ 1 + length str) "%rcx"
 
-            Comment str             -> (loops, strings, ("/*" ++ trimmed ++ "*/") : ops, regMap)
-                where
-                    trimmed         = dropWhile isSpace $ dropWhileEnd isSpace str
+            Comment str             -> (loops, strings, ("/* " ++ str ++ " */") : ops, regMap)
 
 formatString []             = []
 formatString (x:xs)

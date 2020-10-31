@@ -40,7 +40,7 @@ compileStatement indent stmt    = (replicate indent '\t') ++ case stmt of
     Input off                   -> (showOff off) ++ " = getchar();"
     Output val                  -> "putchar(" ++ (compileExpression val) ++ ");"
     Print str                   -> "printf(\"%s\", " ++ (show str) ++ ");"
-    Comment str                 -> "/* " ++ str ++ "*/"
+    Comment str                 -> "/* " ++ str ++ " */"
     where
         showOff off             = "p[" ++ (show off) ++ "]"
 

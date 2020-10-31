@@ -19,6 +19,7 @@ import Brainfuck.Optimizations.RemoveNoop
 import Brainfuck.Optimizations.ReorderGrouping
 import Brainfuck.Optimizations.ConstantFold
 import Brainfuck.Optimizations.TrailingUnused
+import Brainfuck.Optimizations.Comments
 
 optimizations :: [([Statement] -> [Statement])]
 optimizations = [
@@ -28,7 +29,9 @@ optimizations = [
         removeNoops,
         reorderAndGroup,
         constantFold,
-        removeTrailing
+        removeTrailing,
+        trimComments,
+        stripComments
     ]
 
 compilers :: [(String, [Statement] -> String)]
@@ -41,7 +44,8 @@ compilers = [
 
 validOptions = [
         "i", "o", "code",
-        "Onone", "Ogroup", "Ocopyloop", "Oshifts", "Onoop", "Ogroup2", "Oconstfold", "Otrailing"
+        "Onone", "Ogroup", "Ocopyloop", "Oshifts", "Onoop", "Ogroup2",
+        "Oconstfold", "Otrailing", "Otrimcomments", "Ostripcomments"
     ]
 
 parseOptions []             = []
@@ -118,7 +122,9 @@ main = do
                 isEnabled "Onoop",
                 isEnabled "Ogroup2",
                 isEnabled "Oconstfold",
-                isEnabled "Otrailing"
+                isEnabled "Otrailing",
+                isEnabled "Otrimcomments",
+                getSwitch False "Ostripcomments"
             ]
 
     let code                = parseStatements input
