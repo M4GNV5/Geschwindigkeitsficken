@@ -176,7 +176,7 @@ compileStatements stmts     = stringsHead ++ stringsBody ++ asmHead ++ asmBody +
     where
         stringsHead         = ".section .rodata\n"
         stringOp (i, str)   = "str" ++ (show i) ++ ":\n\t" ++ ".string \"" ++ (formatString str) ++ "\""
-        stringsBody         = intercalate "\n" $ map stringOp $ zip [0..] strings
+        stringsBody         = intercalate "\n" $ map stringOp $ zip [0..] $ reverse strings
         asmHead             = "\n\n.text\n" ++
             ".global bfmain\n" ++
             ".type bfmain, %function\n" ++
