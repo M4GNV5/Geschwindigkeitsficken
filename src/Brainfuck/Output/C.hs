@@ -33,6 +33,7 @@ compileStatement indent stmt    = (replicate indent '\t') ++ case stmt of
         | off > 0               -> "p += " ++ (show off) ++ ";"
         | off < 0               -> "p -= " ++ (show (-off)) ++ ";"
         | otherwise             -> ""
+    AddUntilZero off val        -> (showOff off) ++ " = addUntilZero(" ++ (showOff off) ++ ", " ++ (show val) ++ ");"
     Loop off children           -> "while(" ++ (showOff off) ++ ") {\n" ++ body ++ end
         where
             body                = intercalate "\n" $ map (compileStatement (indent + 1)) children
@@ -46,9 +47,10 @@ compileStatement indent stmt    = (replicate indent '\t') ++ case stmt of
 
 codeHead                        = "#include <stdio.h>\n" ++
     "#include <stdint.h>\n" ++
-    "uint8_t vars[4096] = {0};\n" ++
+    "uint8_t vars[0x4000] = {0};\n" ++
+    "uint8_t addUntilZero(uint8_t x,uint8_t step) {uint8_t count=0;while(1){count+=x/step;x=x%step;if(x==0)return count;x=x-step;count++;} return count;}\n" ++
     "int main() {\n" ++
-    "\tuint8_t *p = vars;\n"
+    "\tuint8_t *p = vars + 0x800;\n"
 
 codeTail                        = "\n\treturn 0;\n}\n"
 
