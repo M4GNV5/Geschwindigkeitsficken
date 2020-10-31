@@ -30,6 +30,7 @@ optimizations = [
         reorderAndGroup,
         constantFold,
         removeTrailing,
+        splitCommentsOnNewline,
         trimComments,
         stripComments
     ]
@@ -123,6 +124,7 @@ main = do
                 isEnabled "Ogroup2",
                 isEnabled "Oconstfold",
                 isEnabled "Otrailing",
+                isEnabled "Osplitcomments",
                 isEnabled "Otrimcomments",
                 getSwitch False "Ostripcomments"
             ]

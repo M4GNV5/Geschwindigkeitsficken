@@ -128,5 +128,6 @@ specific ones using the corresponding `-O` switch.
 - `-Ogroup2` reorders and groups statements. e.g. `++>++<++` turns into `p[0] += 4; p[1] += 2`
 - `-Oconstfold` evaluate the program as much as possible
 - `-Otrailing` remove all instructions after the last `,` or `.`
+- `-Osplitcomments` splits comments on newlines (makes them more readable in output files)
 - `-Otrimcomments` trim all comments (remove spacing from start and end)
 - `-Ostripcomments` removes all comments, only optimization disabled by default
