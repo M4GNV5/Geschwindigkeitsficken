@@ -114,6 +114,8 @@ Either `-i` or `-code` must be given.
 with `.c` C code will be outputted, `.S` makes it output amd64 assembly and `.dump` will
 write the internal instruction layout. Everything else produces a native executable.
 - `-code <code>` passes code through a command line option rather than reading it from a file
+- `-g` adds debugging information to the binary and outputs a `.dump` file which is
+shown by e.g. gdb for stepping
 
 #### Optimization
 By default all optimizations are enabled and can be disabled using the specific
