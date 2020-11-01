@@ -39,12 +39,12 @@ compilers :: [(String, [Statement] -> String)]
 compilers = [
         (".dump", dumpStatements),
         (".json", JSON.dumpStatements),
-        (".S", ASM.compileStatements),
+        (".S", ASM.compileStatements "<<file>>.dump"),
         (".c", C.compileStatements)
     ]
 
 validOptions = [
-        "i", "o", "code",
+        "i", "o", "code", "g",
         "Onone", "Ogroup", "Ocopyloop", "Oshifts", "Onoop", "Ogroup2",
         "Oconstfold", "Otrailing", "Otrimcomments", "Ostripcomments"
     ]
@@ -136,4 +136,11 @@ main = do
 
     case lookup (takeExtension outFile) compilers of
         Just compiler       -> writeFile outFile (compiler optimized)
-        Nothing             -> assembleAndLink (ASM.compileStatements optimized) outFile
+        Nothing             -> do
+            let dumpName    = if hasOption "g"
+                then (getOption "code" "i") ++ ".dump"
+                else []
+            if null dumpName
+                then return ()
+                else writeFile dumpName (dumpStatements optimized)
+            assembleAndLink (ASM.compileStatements dumpName optimized) outFile

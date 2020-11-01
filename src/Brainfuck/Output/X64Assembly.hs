@@ -120,11 +120,22 @@ regMapSwap old new          = (storeOps, loadOps)
         storeOps            = map (uncurry storeOld) $ zip [0..] old
         loadOps             = map (uncurry loadNew) $ zip [0..] new
 
-compileStatement state []           = state
-compileStatement (loops, strings, ops, regMap) (stmt:rest)
-                                    = compileStatement state' rest
+lineCount :: Statement -> Int
+lineCount (Loop _ [])       = 2
+lineCount (Loop _ children) = 1 + (sum $ map lineCount children)
+lineCount _                 = 1
+
+compileStatement line state []      = state
+compileStatement line (loops, strings, opsIn, regMap) (stmt:rest)
+                                    = compileStatement nextLine state' rest
     where
         regMap'                     = regAlloc rest
+        ops                         = if line < 0
+            then opsIn
+            else (".loc 1 " ++ (show line)) : opsIn
+        nextLine                    = if line < 0
+            then line
+            else line + lineCount stmt
         (storeOps, loadOps)         = regMapSwap regMap regMap'
         state'                      = case stmt of
             Add off val             -> (loops, strings, addExprMem regMap off val ++ ops, regMap)
@@ -154,7 +165,10 @@ compileStatement (loops, strings, ops, regMap) (stmt:rest)
                     (storeOps, loadChildOps)            = regMapSwap regMap childRegMap
                     (innerStore, loadChildOps')         = regMapSwap innerMap childRegMap
                     (_, loadOps)                        = regMapSwap [] regMap'
-                    (loops', strings', ops', innerMap)  = compileStatement (loops + 1, strings, [], childRegMap) children
+                    childLine                           = if line < 0
+                        then -1
+                        else line + 1
+                    (loops', strings', ops', innerMap)  = compileStatement childLine (loops + 1, strings, [], childRegMap) children
                     loopOpsWithSwap = loopTailOps ++ loadChildOps' ++ innerStore ++ ops' ++ loopHeadOps
                     opsWithSwap     = loadOps ++ loopOpsWithSwap ++ loadChildOps ++ storeOps ++ ops
                     opsWithoutSwap  = loopTailOps ++ ops' ++ loopHeadOps ++ ops
@@ -172,18 +186,23 @@ formatString (x:xs)
     | x >= ' ' && x <= '~'  = x : formatString xs
     | otherwise             = '\\' : 'x' : showHex (ord x) (formatString xs)
 
-compileStatements stmts     = stringsHead ++ stringsBody ++ asmHead ++ asmBody ++ asmTail
+compileStatements filename stmts
+                            = stringsHead ++ stringsBody ++ asmHead ++ asmBody ++ asmTail
     where
         stringsHead         = ".section .rodata\n"
         stringOp (i, str)   = "str" ++ (show i) ++ ":\n\t" ++ ".string \"" ++ (formatString str) ++ "\""
         stringsBody         = intercalate "\n" $ map stringOp $ zip [0..] $ reverse strings
+        (line, debugHead)   = if null filename
+            then (-1, [])
+            else (1, ".file 1 " ++ (show filename) ++ "\n\t")
         asmHead             = "\n\n.text\n" ++
             ".global bfmain\n" ++
             ".type bfmain, %function\n" ++
-            "bfmain:\n\t"
+            "bfmain:\n\t" ++
+            debugHead
         asmTail             = "\n\tret"
         asmBody             = intercalate "\n\t" $ reverse ops'
         regMap              = regAlloc stmts
         loadOps             = map (loadZero . (usableRegs !!)) $ take (length regMap) [0..]
-        (_, strings, ops, _)= compileStatement (0, [], [], regMap) stmts
+        (_, strings, ops, _)= compileStatement line (0, [], [], regMap) stmts
         ops'                = ops ++ loadOps
